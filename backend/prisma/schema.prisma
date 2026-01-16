@@ -1,36 +1,197 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  email      String?  @unique
-  phone      String   @unique
-  isVerified Boolean  @default(false)
+  id         String      @id @default(uuid())
+  name       String? // 👈 OPTIONAL
+  phone      String      @unique
+  isVerified Boolean     @default(false)
+  printJobs  PrintJob[]
+  pickupOtps PickupOtp[]
+  role  Role @default(USER)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vendor {
-  id         String   @id @default(uuid())
-  shopName   String
+  id        String @id @default(uuid())
+  shopName  String
   ownerName String
-  phone      String   @unique
-  isActive   Boolean  @default(true)
+  phone     String @unique
+  password  String
 
+  isActive  Boolean         @default(true)
+  printJobs PrintJob[]
+  earnings  VendorEarning[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserOtp {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  otpHash   String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  @@index([phone])
+}
+
+enum PrintJobStatus {
+  PENDING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PrintColorMode {
+  COLOR
+  BLACK_WHITE
+}
+
+enum PaperSize {
+  A4
+  A3
+}
+
+model PrintJob {
+  id      String @id @default(uuid())
+  fileUrl String
+  copies  Int
+
+  status PrintJobStatus @default(PENDING)
+
+  userId   String
+  vendorId String
+
+  user            User           @relation(fields: [userId], references: [id])
+  vendor          Vendor         @relation(fields: [vendorId], references: [id])
+  colorMode PrintColorMode @default(BLACK_WHITE)
+  paperSize PaperSize @default(A4)
+  pickupOtp       PickupOtp?
+  price           Int? // price in paise (₹1 = 100)
+  pricedAt        DateTime?
+  priceAccepted   Boolean        @default(false)
+  priceAcceptedAt DateTime?
+  payment         Payment?
+  completedAt     DateTime?
+  vendorEarning   VendorEarning?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([vendorId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model PickupOtp {
+  id        String   @id @default(uuid())
+  otp       String
+  expiresAt DateTime
+
+  jobId  String @unique
+  userId String
+
+  job  PrintJob @relation(fields: [jobId], references: [id])
+  user User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+enum PaymentMethod {
+  ONLINE
+  OFFLINE
+}
+
+enum PaymentStatus {
+  INITIATED
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  amount           Int
+  method           PaymentMethod @default(ONLINE)
+  status           PaymentStatus @default(INITIATED)
+  gatewayPaymentId String? // Razorpay/Stripe ID
+  gatewayOrderId   String?
+  failureReason    String?
+  idempotencyKey   String?       @unique
+
+  jobId               String    @unique
+  job                 PrintJob  @relation(fields: [jobId], references: [id])
+  paidAt              DateTime?
+  refundedAt          DateTime?
+  confirmedByVendorAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([jobId])
+}
+
+model VendorEarning {
+  id            String        @id @default(uuid())
+  vendorId      String
+  jobId         String        @unique
+  grossAmount   Int
+  platformFee   Int
+  netAmount     Int
+  status        EarningStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  settledAt     DateTime?
+  settlementRef String? // bank txn id / batch id
+
+  vendor Vendor   @relation(fields: [vendorId], references: [id])
+  job    PrintJob @relation(fields: [jobId], references: [id])
+
+  @@index([vendorId])
+  @@index([createdAt])
+  @@index([vendorId, createdAt])
+  @@index([vendorId, settledAt])
+}
+
+enum EarningStatus {
+  PENDING
+  SETTLED
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String // "PAYMENT" | "VENDOR_EARNING" | "SETTLEMENT"
+  entityId   String
+  action     String // "CREATED" | "PAID" | "REFUND_INITIATED" | "SETTLED"
+  metadata   Json?
+  actorType  String // "USER" | "VENDOR" | "ADMIN" | "SYSTEM"
+  actorId    String?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  @@index([entityType, entityId])
 }
