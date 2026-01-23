@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export async function apiFetch<T = unknown>(
   path: string,
@@ -6,35 +7,31 @@ export async function apiFetch<T = unknown>(
 ): Promise<T> {
   const isFormData = options.body instanceof FormData;
 
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      credentials: "include",
-      headers: isFormData
-        ? {}
-        : {
-            "Content-Type": "application/json",
-            ...options.headers,
-          },
-      ...options,
-    });
+  const res = await fetch(`${API_BASE}${path}`, {
+    // 🔥 MUST be here, before spread
+    credentials: "include",
 
-    if (!res.ok) {
-      let errorMessage = `HTTP ${res.status}: Request failed`;
-      try {
-        const data = await res.json();
-        errorMessage = data.error || data.message || errorMessage;
-      } catch (parseError) {
-        // If JSON parsing fails, use default error message
-        console.warn('Failed to parse error response as JSON:', parseError);
-      }
-      throw new Error(errorMessage);
-    }
+    // 🔥 headers MUST merge correctly
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    },
 
-    return await res.json();
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
+    ...options, // spread LAST so method/body override safely
+  });
+
+  if (!res.ok) {
+    let errorMessage = `HTTP ${res.status}: Request failed`;
+    try {
+      const data = await res.json();
+      errorMessage = data.error || data.message || errorMessage;
+    } catch {
+      // ignore JSON parse errors
     }
-    throw new Error('Network error or unexpected failure');
+    throw new Error(errorMessage);
   }
+
+  // Some endpoints may return empty body (204, logout, etc.)
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : ({} as T);
 }
