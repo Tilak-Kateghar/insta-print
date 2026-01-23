@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
-import { verifyUserAuth } from "@/lib/auth";
-import { Printer, ArrowRight, KeyRound, Check, Home } from "lucide-react";
+import { Printer, ArrowRight, KeyRound, Home } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Alert } from "@/components/ui/Alert";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -19,6 +18,14 @@ export default function UserLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
+
+  // Clear OTP when step changes
+  useEffect(() => {
+    if (step === "PHONE") {
+      setDevOtp(null);
+      setOtp("");
+    }
+  }, [step]);
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +40,7 @@ export default function UserLoginPage() {
     try {
       setLoading(true);
 
-      const res = await apiFetch<{ otp?: string; success?: boolean }>("/users/send-otp", {
+      const res = await apiFetch<{ otp?: string }>("/users/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,12 +49,10 @@ export default function UserLoginPage() {
         body: JSON.stringify({ phone }),
       });
 
-      // Show OTP for verification
       if (res?.otp) {
         setDevOtp(res.otp);
       }
 
-      // Move to OTP verification step
       setStep("OTP");
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
@@ -68,7 +73,6 @@ export default function UserLoginPage() {
     try {
       setLoading(true);
 
-      // Verify OTP first
       await apiFetch("/users/verify-otp", {
         method: "POST",
         headers: {
@@ -78,17 +82,7 @@ export default function UserLoginPage() {
         body: JSON.stringify({ phone, otp }),
       });
 
-      // CRITICAL: Verify auth state by calling /user/me
-      // This confirms the cookie was properly set and auth is working
-      const isAuthenticated = await verifyUserAuth();
-
-      if (isAuthenticated) {
-        // Auth confirmed - redirect to dashboard
-        router.replace("/dashboard");
-      } else {
-        // Auth verification failed - cookie may not be set
-        setError("Authentication failed. Please try again or contact support.");
-      }
+      router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "OTP verification failed");
     } finally {
@@ -160,8 +154,8 @@ export default function UserLoginPage() {
                     className="text-sm sm:text-base"
                   />
 
-                  {devOtp && (
-                    <Alert variant="info" title="Verification Code">
+                  {process.env.NODE_ENV !== "production" && devOtp && (
+                    <Alert variant="info" title="Development Mode">
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-bold">{devOtp}</span>
                         <Button
@@ -172,7 +166,6 @@ export default function UserLoginPage() {
                             navigator.clipboard.writeText(devOtp);
                             setOtp(devOtp);
                           }}
-                          icon={<Check className="w-4 h-4" />}
                         >
                           Copy & Fill
                         </Button>

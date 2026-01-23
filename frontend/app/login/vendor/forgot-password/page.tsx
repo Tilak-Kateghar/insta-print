@@ -14,9 +14,7 @@ import {
   Phone,
   KeyRound,
   Lock,
-  CheckCircle,
-  AlertTriangle,
-  Loader2
+  Loader2,
 } from "lucide-react";
 
 type Step = "PHONE" | "OTP" | "RESET";
@@ -50,6 +48,10 @@ export default function VendorForgotPasswordPage() {
         "/vendors/forgot-password",
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
           body: JSON.stringify({ phone }),
         }
       );
@@ -80,6 +82,10 @@ export default function VendorForgotPasswordPage() {
 
       await apiFetch("/vendors/verify-forgot-otp", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ phone, otp }),
       });
 
@@ -105,6 +111,10 @@ export default function VendorForgotPasswordPage() {
 
       await apiFetch("/vendors/reset-password", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ phone, otp, newPassword }),
       });
 
@@ -196,6 +206,27 @@ export default function VendorForgotPasswordPage() {
 
             {step === "OTP" && (
               <div className="space-y-4">
+                {process.env.NODE_ENV !== "production" && devOtp && (
+                  <Alert variant="info" title="Development Mode">
+                    <AlertDescription>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold">{devOtp}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(devOtp);
+                            setOtp(devOtp);
+                          }}
+                        >
+                          Copy & Fill
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <KeyRound className="w-4 h-4" />
@@ -211,29 +242,6 @@ export default function VendorForgotPasswordPage() {
                     required
                   />
                 </div>
-
-                {devOtp && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold">{devOtp}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(devOtp);
-                            setOtp(devOtp);
-                          }}
-                          className="text-green-700 hover:text-green-800 hover:bg-green-100"
-                        >
-                          Copy & Fill
-                        </Button>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
             )}
 
@@ -256,7 +264,6 @@ export default function VendorForgotPasswordPage() {
 
             {error && (
               <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -278,7 +285,7 @@ export default function VendorForgotPasswordPage() {
                 </>
               ) : step === "OTP" ? (
                 <>
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <KeyRound className="w-5 h-5 mr-2" />
                   Verify OTP
                 </>
               ) : (
@@ -303,3 +310,4 @@ export default function VendorForgotPasswordPage() {
     </div>
   );
 }
+

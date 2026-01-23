@@ -8,6 +8,7 @@ import ms from "ms";
 import { authGuard } from "../middlewares/authGuard";
 import { generateOtp, hashOtp } from "../utils/otp";
 import { AppError } from "../utils/AppError";
+import { getAuthCookieOptions } from "../utils/cookies";
 import {
   vendorForgotOtpSendLimiter,
   vendorForgotOtpVerifyLimiter,
@@ -102,19 +103,13 @@ router.post(
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none" as const,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
+    res.cookie("access_token", token, getAuthCookieOptions());
+    res.cookie("role", "VENDOR", {
+      ...getAuthCookieOptions(),
+      httpOnly: false,
+    });
 
-    res.cookie("access_token", token, cookieOptions);
-    res.cookie("role", "VENDOR", { ...cookieOptions, httpOnly: false });
-
-    return res.status(200).json({
-      success: true,
-      role: "VENDOR",
+    res.json({
       message: "Login successful",
       vendor: {
         id: vendor.id,
@@ -262,14 +257,9 @@ router.post(
 router.post(
   "/logout",
   asyncHandler(async (_req: Request, res: Response) => {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none" as const,
-    };
-
-    res.clearCookie("access_token", cookieOptions);
-    res.clearCookie("role", { ...cookieOptions, httpOnly: false });
+    const options = getAuthCookieOptions();
+    res.clearCookie("access_token", options);
+    res.clearCookie("role", { ...options, httpOnly: false });
     res.json({ message: "Logged out" });
   })
 );
@@ -289,6 +279,14 @@ router.get(
     });
 
     return res.status(200).json({ vendors });
+  })
+);
+
+router.get(
+  "/me",
+  authGuard(["VENDOR"]),
+  asyncHandler(async (req, res) => {
+    res.json({ ok: true, vendorId: req.auth!.id });
   })
 );
 

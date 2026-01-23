@@ -7,6 +7,7 @@ import { AppError } from "../utils/AppError";
 import jwt from "jsonwebtoken";
 import { generateOtp, hashOtp } from "../utils/otp";
 import { logger } from "../lib/logger";
+import { getAuthCookieOptions } from "../utils/cookies";
 
 const router = express.Router();
 
@@ -104,22 +105,24 @@ router.post(
       { expiresIn: "7d" }
     );
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none" as const,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    };
+    res.cookie("access_token", token, getAuthCookieOptions());
+    res.cookie("role", "USER", {
+      ...getAuthCookieOptions(),
+      httpOnly: false,
+    });
 
-    res.cookie("access_token", token, cookieOptions);
-    res.cookie("role", "USER", { ...cookieOptions, httpOnly: false });
-
-    return res.status(200).json({
-      success: true,
-      role: "USER",
+    return res.json({
       message: "OTP verified",
       user: { id: user.id, phone: user.phone },
     });
+  })
+);
+
+router.get(
+  "/me",
+  authGuard(["USER"]),
+  asyncHandler(async (req, res) => {
+    res.json({ ok: true, userId: req.auth!.id });
   })
 );
 
@@ -171,18 +174,9 @@ router.get(
 router.post(
   "/logout",
   asyncHandler(async (_req: Request, res: Response) => {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none" as const,
-    } as const;
-
-    res.clearCookie("access_token", cookieOptions);
-    res.clearCookie("role", {
-      httpOnly: false,
-      secure: !isDev,
-      sameSite: (isDev ? "lax" : "strict") as "lax" | "strict",
-    });
+    const options = getAuthCookieOptions();
+    res.clearCookie("access_token", options);
+    res.clearCookie("role", { ...options, httpOnly: false });
 
     return res.status(200).json({ message: "Logged out" });
   })
