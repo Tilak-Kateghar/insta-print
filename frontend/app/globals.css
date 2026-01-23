@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-tomato-50: #FFEBEE;
+  --color-tomato-100: #FFCDD2;
+  --color-tomato-200: #EF9A9A;
+  --color-tomato-300: #E57373;
+  --color-tomato-400: #EF5350;
+  --color-tomato-500: #E53935;
+  --color-tomato-600: #C62828;
+  --color-tomato-700: #B71C1C;
+  --color-tomato-800: #C62828;
+  --color-tomato-900: #B71C1C;
+
+  --color-deepOrange-50: #FBE9E7;
+  --color-deepOrange-100: #FFCCBC;
+  --color-deepOrange-200: #FFAB91;
+  --color-deepOrange-300: #FF8A65;
+  --color-deepOrange-400: #FF7043;
+  --color-deepOrange-500: #FF5722;
+  --color-deepOrange-600: #E64A19;
+  --color-deepOrange-700: #D84315;
+  --color-deepOrange-800: #BF360C;
+  --color-deepOrange-900: #3E2723;
+
+  --color-cream-50: #FAFAFA;
+  --color-cream-100: #F5F5F5;
+  --color-cream-200: #EEEEEE;
+  --color-cream-300: #E0E0E0;
+
+  --color-charcoal-900: #212121;
+  --color-charcoal-800: #424242;
+  --color-charcoal-700: #616161;
+  --color-charcoal-600: #757575;
+  --color-charcoal-500: #9E9E9E;
+
+  --color-success-50: #E8F5E9;
+  --color-success-100: #C8E6C9;
+  --color-success-200: #A5D6A7;
+  --color-success-300: #81C784;
+  --color-success-400: #66BB6A;
+  --color-success-500: #43A047;
+  --color-success-600: #388E3C;
+  --color-success-700: #2E7D32;
+
+  --color-warning-50: #FFF8E1;
+  --color-warning-100: #FFECB3;
+  --color-warning-200: #FFE082;
+  --color-warning-300: #FFD54F;
+  --color-warning-400: #FFCA28;
+  --color-warning-500: #FFC107;
+  --color-warning-600: #FFB300;
+  --color-warning-700: #FFA000;
+
+  --color-info-50: #E0F2F1;
+  --color-info-100: #B2DFDB;
+  --color-info-200: #80CBC4;
+  --color-info-300: #4DB6AC;
+  --color-info-400: #26A69A;
+  --color-info-500: #009688;
+  --color-info-600: #00897B;
+  --color-info-700: #00796B;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-button: 0 2px 8px rgba(229, 57, 53, 0.3);
+  --shadow-button-hover: 0 4px 16px rgba(229, 57, 53, 0.4);
+
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-badge: 20px;
+}
+
+body {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 50%, #FEF2F2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #212121;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

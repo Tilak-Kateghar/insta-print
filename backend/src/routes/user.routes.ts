@@ -2,23 +2,15 @@ import express from "express";
 import prisma from "../lib/prisma";
 import { asyncHandler } from "../utils/asyncHandler";
 import { authGuard } from "../middlewares/authGuard";
-import { otpSendLimiter } from "../middlewares/customLimiters";
-import { otpVerifyLimiter } from "../middlewares/customLimiters";
+import { otpSendLimiter, otpVerifyLimiter } from "../middlewares/customLimiters";
 import { AppError } from "../utils/AppError";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = "7d";
+import { generateOtp, hashOtp } from "../utils/otp";
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET!;
+const isDev = process.env.NODE_ENV !== "production";
 
-// helper to generate 6-digit OTP
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// send otp
 router.post(
   "/send-otp",
   otpSendLimiter,
@@ -26,127 +18,92 @@ router.post(
     const { phone } = req.body;
 
     if (typeof phone !== "string" || phone.trim().length < 10) {
-      return res.status(400).json({ error: "Invalid phone number" });
+      throw new AppError("Invalid phone number", 400);
     }
 
     const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const otpHash = hashOtp(phone, otp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    const otpHash = await bcrypt.hash(otp, 10);
+    await prisma.userOtp.deleteMany({ where: { phone } });
 
-    // delete existing OTP for this phone (enforce one active OTP)
-    await prisma.userOtp.deleteMany({
-      where: { phone },
+    await prisma.userOtp.create({
+      data: { phone, otpHash, expiresAt },
     });
 
-    // store new OTP
-    await prisma.userOtp.upsert({
-      where: { phone },
-      update: {
-        otpHash,
-        expiresAt,
-        attempts: 0,
-      },
-      create: {
-        phone,
-        otpHash,
-        expiresAt,
-      },
-    });
-
-    // DEV ONLY: log OTP
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`📲 OTP for ${phone}: ${otp}`);
+    if (isDev) {
+      console.log(`\n🔐 DEV OTP for ${phone}: ${otp}\n`);
     }
 
+    console.log(`${otp}`);
+
     return res.status(200).json({
-      message: "OTP sent successfully",
+      message: "OTP generated",
+      ...(isDev && { otp }),
     });
   })
 );
 
-// verify otp
 router.post(
   "/verify-otp",
   otpVerifyLimiter,
   asyncHandler(async (req, res) => {
     const { phone, otp } = req.body;
 
-    if (typeof phone !== "string" || phone.trim().length < 10) {
-      return res.status(400).json({ error: "Invalid phone number" });
+    console.log(`${otp}`);
+
+    if (!phone || !otp) {
+      throw new AppError("Phone and OTP required", 400);
     }
 
-    if (typeof otp !== "string" || otp.length !== 6) {
-      return res.status(400).json({ error: "Invalid OTP" });
-    }
+    const record = await prisma.userOtp.findUnique({ where: { phone } });
 
-    const record = await prisma.userOtp.findUnique({
-      where: { phone },
-    });
-
-    if (!record) {
-      return res.status(400).json({ error: "OTP not found" });
-    }
-
+    if (!record) throw new AppError("OTP not found", 400);
     if (record.expiresAt < new Date()) {
-      await prisma.userOtp.delete({ where: { id: record.id } });
-      return res.status(400).json({ error: "OTP expired" });
+      await prisma.userOtp.delete({ where: { phone } });
+      throw new AppError("OTP expired", 400);
     }
 
-    const isValid = await bcrypt.compare(otp, record.otpHash);
-
-    if (!isValid) {
+    if (hashOtp(phone, otp) !== record.otpHash) {
       throw new AppError("Invalid OTP", 400);
     }
 
-    // find or create user
-    let user = await prisma.user.findUnique({
-      where: { phone },
-    });
+    let user = await prisma.user.findUnique({ where: { phone } });
 
     if (!user) {
       user = await prisma.user.create({
-        data: {
-          phone,
-          isVerified: true,
-        },
+        data: { phone, isVerified: true },
       });
     } else if (!user.isVerified) {
-      user = await prisma.user.update({
+      await prisma.user.update({
         where: { phone },
         data: { isVerified: true },
       });
     }
 
-    // delete OTP after successful verification
-    await prisma.userOtp.delete({
-      where: { id: record.id },
-    });
+    await prisma.userOtp.delete({ where: { phone } });
 
-    // ✅ ISSUE JWT (THIS IS THE LOGIN MOMENT)
     const token = jwt.sign(
-      {
-        sub: user.id,
-        role: "USER", // ← THIS IS THE SOURCE OF TRUTH
-      },
+      { sub: user.id, role: "USER" },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      { expiresIn: "7d" }
     );
 
-    // ✅ SET COOKIE
     res.cookie("access_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: !isDev,
+      sameSite: isDev ? "lax" : "strict",
     });
 
-    // ✅ RESPONSE
-    return res.status(200).json({
-      message: "OTP verified successfully",
-      user: {
-        id: user.id,
-        phone: user.phone,
-      },
+    res.cookie("role", "USER", {
+      httpOnly: false,
+      secure: !isDev,
+      sameSite: isDev ? "lax" : "strict",
+    });
+
+    return res.json({
+      message: "OTP verified",
+      user: { id: user.id, phone: user.phone },
     });
   })
 );
@@ -159,74 +116,54 @@ router.get(
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        createdAt: true,
-      },
+      select: { id: true, name: true, phone: true, createdAt: true },
     });
 
-    if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
 
     const jobs = await prisma.printJob.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
-        fileUrl: true,
-        copies: true,
-        colorMode: true,
-        paperSize: true,
-        price: true,
         status: true,
+        price: true,
         createdAt: true,
-        completedAt: true,
-        vendor: {
-          select: {
-            id: true,
-            shopName: true,
-          },
-        },
-        payment: {
-          select: {
-            status: true,
-            method: true,
-          },
-        },
+        vendor: { select: { shopName: true, ownerName: true } },
       },
     });
-
-    const totals = jobs.reduce(
-      (acc, j) => {
-        acc.totalJobs++;
-        if (j.status === "COMPLETED") acc.completed++;
-        if (j.status === "CANCELLED") acc.cancelled++;
-        if (j.price) acc.totalSpent += j.price;
-        return acc;
-      },
-      {
-        totalJobs: 0,
-        completed: 0,
-        cancelled: 0,
-        totalSpent: 0,
-      }
-    );
 
     return res.status(200).json({
       user,
       summary: {
-        totalJobs: totals.totalJobs,
-        completedJobs: totals.completed,
-        cancelledJobs: totals.cancelled,
-        pendingJobs:
-          totals.totalJobs - totals.completed - totals.cancelled,
-        totalSpent: totals.totalSpent,
+        totalJobs: jobs.length,
+        completedJobs: jobs.filter(j => j.status === "COMPLETED").length,
+        cancelledJobs: jobs.filter(j => j.status === "CANCELLED").length,
+        pendingJobs: jobs.filter(j => j.status === "PENDING").length,
+        totalSpent: jobs.reduce((s, j) => s + (j.price ?? 0), 0),
       },
       jobs,
     });
+  })
+);
+
+router.post(
+  "/logout",
+  asyncHandler(async (_req, res) => {
+    const cookieOptions = {
+      httpOnly: true,
+      secure: !isDev,
+      sameSite: isDev ? "lax" : "strict",
+    } as const;
+
+    res.clearCookie("access_token", cookieOptions);
+    res.clearCookie("role", {
+      httpOnly: false,
+      secure: !isDev,
+      sameSite: isDev ? "lax" : "strict",
+    });
+
+    return res.status(200).json({ message: "Logged out" });
   })
 );
 

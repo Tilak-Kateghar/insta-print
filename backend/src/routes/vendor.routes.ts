@@ -3,27 +3,25 @@ import bcrypt from "bcryptjs";
 import prisma from "../lib/prisma";
 import { asyncHandler } from "../utils/asyncHandler";
 import { strictLimiter } from "../middlewares/rateLimit";
-import * as jwt from "jsonwebtoken";
-import type { SignOptions, Secret } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import ms from "ms";
 import { authGuard } from "../middlewares/authGuard";
 import { parsePagination } from "../utils/pagination";
+import { generateOtp, hashOtp } from "../utils/otp";
+import { AppError } from "../utils/AppError";
+import {
+  vendorForgotOtpSendLimiter,
+  vendorForgotOtpVerifyLimiter,
+} from "../middlewares/customLimiters";
 
 const router = Router();
 
-/* ================= ENV ================= */
+const JWT_SECRET = process.env.JWT_SECRET!;
+if (!JWT_SECRET) throw new Error("JWT_SECRET not set");
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET as Secret;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined");
-}
-
-const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
-  process.env.JWT_EXPIRES_IN
-    ? (process.env.JWT_EXPIRES_IN as ms.StringValue)
-    : "7d";
-
-/* ================= SIGNUP (PUBLIC) ================= */
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN
+  ? (process.env.JWT_EXPIRES_IN as ms.StringValue)
+  : "7d";
 
 router.post(
   "/signup",
@@ -57,39 +55,31 @@ router.post(
     return res.status(201).json({
       id: vendor.id,
       shopName: vendor.shopName,
+      ownerName: vendor.ownerName,
       phone: vendor.phone,
     });
   })
 );
 
-/* ================= LOGIN (PUBLIC) ================= */
-
 router.post(
   "/login",
   strictLimiter,
   asyncHandler(async (req, res) => {
-    const { phone, password } = req.body;
+    const phone = String(req.body.phone || "").trim();
+    const password = String(req.body.password || "");
 
-    if (
-      typeof phone !== "string" ||
-      phone.trim().length < 10 ||
-      typeof password !== "string" ||
-      password.length < 8
-    ) {
-      return res.status(400).json({ error: "Invalid credentials" });
+    if (phone.length < 10 || password.length < 8) {
+      throw new AppError("Invalid credentials", 400);
     }
 
-    const vendor = await prisma.vendor.findUnique({
-      where: { phone },
-    });
-
+    const vendor = await prisma.vendor.findUnique({ where: { phone } });
     if (!vendor || !vendor.isActive) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      throw new AppError("Invalid credentials", 401);
     }
 
-    const isValid = await bcrypt.compare(password, vendor.password);
-    if (!isValid) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    const ok = await bcrypt.compare(password, vendor.password);
+    if (!ok) {
+      throw new AppError("Invalid credentials", 401);
     }
 
     const token = jwt.sign(
@@ -101,10 +91,16 @@ router.post(
     res.cookie("access_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     });
 
-    return res.status(200).json({
+    res.cookie("role", "VENDOR", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    });
+
+    res.json({
       message: "Login successful",
       vendor: {
         id: vendor.id,
@@ -115,42 +111,142 @@ router.post(
   })
 );
 
-/* ================= LOGOUT (OPTIONAL AUTH) ================= */
+router.post(
+  "/forgot-password",
+  vendorForgotOtpSendLimiter,
+  asyncHandler(async (req, res) => {
+    const phone = String(req.body.phone || "").trim();
+    if (!phone) throw new AppError("Phone required", 400);
+
+    const vendor = await prisma.vendor.findUnique({ where: { phone } });
+
+    if (!vendor) {
+      return res.json({ message: "If account exists, OTP sent" });
+    }
+
+    const otp = generateOtp();
+    const otpHash = hashOtp(phone, otp);
+
+    await prisma.vendorPasswordReset.deleteMany({ where: { phone } });
+
+    await prisma.vendorPasswordReset.create({
+      data: {
+        phone,
+        otpHash,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+    });
+
+    const isDev = process.env.NODE_ENV !== "production";
+
+    if (isDev) {
+      console.log(
+        "\n================ VENDOR FORGOT PASSWORD OTP ================\n" +
+        `📱 Phone : ${phone}\n` +
+        `🔐 OTP   : ${otp}\n` +
+        "===========================================================\n"
+      );
+    }
+
+    return res.json({
+      message: "OTP sent",
+      ...(process.env.NODE_ENV !== "production" && { otp }),
+    });
+  })
+);
+
+router.post(
+  "/verify-forgot-otp",
+  vendorForgotOtpVerifyLimiter,
+  asyncHandler(async (req, res) => {
+    const phone = String(req.body.phone || "").trim();
+    const otp = String(req.body.otp || "");
+
+    if (!phone || !otp) {
+      throw new AppError("Phone and OTP required", 400);
+    }
+
+    const record = await prisma.vendorPasswordReset.findUnique({
+      where: { phone },
+    });
+
+    if (!record) throw new AppError("OTP not found", 400);
+    if (record.expiresAt < new Date()) {
+      await prisma.vendorPasswordReset.delete({ where: { phone } });
+      throw new AppError("OTP expired", 400);
+    }
+
+    if (hashOtp(phone, otp) !== record.otpHash) {
+      throw new AppError("Invalid OTP", 400);
+    }
+
+    res.json({ message: "OTP verified" });
+  })
+);
+
+router.post(
+  "/reset-password",
+  asyncHandler(async (req, res) => {
+    const phone = String(req.body.phone || "").trim();
+    const otp = String(req.body.otp || "");
+    const newPassword = String(req.body.newPassword || "");
+
+    if (!phone || !otp || newPassword.length < 8) {
+      throw new AppError("Invalid request", 400);
+    }
+
+    const record = await prisma.vendorPasswordReset.findUnique({
+      where: { phone },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new AppError("OTP expired", 400);
+    }
+
+    if (hashOtp(phone, otp) !== record.otpHash) {
+      throw new AppError("Invalid OTP", 400);
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+
+    await prisma.$transaction([
+      prisma.vendor.update({
+        where: { phone },
+        data: { password: hashed },
+      }),
+      prisma.vendorPasswordReset.delete({
+        where: { phone },
+      }),
+    ]);
+
+    res.json({ message: "Password reset successful" });
+  })
+);
 
 router.post(
   "/logout",
   asyncHandler(async (_req, res) => {
-    res.clearCookie("access_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
-
-    return res.status(200).json({ message: "Logged out" });
+    res.clearCookie("access_token");
+    res.clearCookie("role");
+    res.json({ message: "Logged out" });
   })
 );
 
-/* ================= PROTECTED EXAMPLE ================= */
-
 router.get(
-  "/me",
-  authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
-    const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id },
-    });
-
-    if (!vendor) {
-      return res.status(404).json({ error: "Vendor not found" });
-    }
-
-    return res.status(200).json({
-      vendor: {
-        id: vendor.id,
-        shopName: vendor.shopName,
-        phone: vendor.phone,
+  "/public",
+  asyncHandler(async (_req, res) => {
+    const vendors = await prisma.vendor.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        shopName: true,
+      },
+      orderBy: {
+        shopName: "asc",
       },
     });
+
+    return res.status(200).json({ vendors });
   })
 );
 
@@ -158,123 +254,7 @@ router.get(
   "/me/dashboard",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
-    const vendorId = req.auth!.id;
-
-    const { page, limit, skip } = parsePagination(req.query);
-
-    const vendor = await prisma.vendor.findUnique({
-      where: { id: vendorId },
-      select: {
-        id: true,
-        shopName: true,
-        ownerName: true,
-        phone: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
-
-    if (!vendor || !vendor.isActive) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const jobs = await prisma.printJob.findMany({
-      where: { vendorId },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        createdAt: true,
-        completedAt: true,
-        status: true,
-        copies: true,
-        colorMode: true,
-        paperSize: true,
-        price: true,
-        user: {
-          select: {
-            id: true,
-            phone: true,
-          },
-        },
-        payment: {
-          select: {
-            status: true,
-            method: true,
-          },
-        },
-      },
-    });
-
-    const earnings = await prisma.vendorEarning.aggregate({
-      where: { vendorId },
-      _sum: {
-        grossAmount: true,
-        platformFee: true,
-        netAmount: true,
-      },
-    });
-
-    const unsettled = await prisma.vendorEarning.aggregate({
-      where: {
-        vendorId,
-        settledAt: null,
-      },
-      _sum: {
-        netAmount: true,
-      },
-    });
-
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-
-    const counts = await prisma.printJob.groupBy({
-      by: ["status"],
-      where: { vendorId },
-      _count: { _all: true },
-    });
-
-    const lifetimeJobs = await prisma.printJob.count({
-      where: { vendorId },
-    });
-
-    const timeCounts = async (from: Date) =>
-      prisma.printJob.count({
-        where: {
-          vendorId,
-          createdAt: { gte: from },
-        },
-      });
-
-    return res.status(200).json({
-      vendor,
-      analytics: {
-        jobs: {
-          today: await timeCounts(startOfDay),
-          week: await timeCounts(startOfWeek),
-          month: await timeCounts(startOfMonth),
-          year: await timeCounts(startOfYear),
-          lifetime: lifetimeJobs,
-        },
-        earnings: {
-          gross: earnings._sum.grossAmount || 0,
-          platformFee: earnings._sum.platformFee || 0,
-          net: earnings._sum.netAmount || 0,
-          pendingSettlement: unsettled._sum.netAmount || 0,
-        },
-      },
-      pagination: {
-        page,
-        limit,
-        returned: jobs.length,
-      },
-      jobs,
-    });
+    res.json({ ok: true });
   })
 );
 

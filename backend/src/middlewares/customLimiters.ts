@@ -1,50 +1,125 @@
 import rateLimit from "express-rate-limit";
+import type { Request } from "express";
 
-export const createLimiter = (
-  max: number,
-  windowMs: number,
-  message: string
-) =>
-  rateLimit({
-    windowMs,
-    max,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: message },
-  });
+const safeKey = (value?: string, prefix = "anon") =>
+  value && value.length > 0 ? value : `${prefix}:unknown`;
 
-export const otpSendLimiter = createLimiter(
-  3,
-  10 * 60 * 1000,
-  "Too many OTP requests. Try later."
-);
+export const otpSendLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
 
-export const otpVerifyLimiter = createLimiter(
-  5,
-  10 * 60 * 1000,
-  "Too many OTP attempts."
-);
+  keyGenerator: (req: Request): string =>
+    safeKey(req.body?.phone, "otp-send"),
 
-export const uploadLimiter = createLimiter(
-  10,
-  60 * 60 * 1000,
-  "Upload limit exceeded."
-);
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many OTP requests. Try later.",
+    });
+  },
+});
 
-export const pricingLimiter = createLimiter(
-  20,
-  60 * 60 * 1000,
-  "Too many pricing attempts."
-);
+export const otpVerifyLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
 
-export const paymentLimiter = createLimiter(
-  5,
-  60 * 60 * 1000,
-  "Too many payment attempts."
-);
+  keyGenerator: (req: Request): string =>
+    safeKey(req.body?.phone, "otp-verify"),
 
-export const pickupLimiter = createLimiter(
-  5,
-  60 * 60 * 1000,
-  "Too many pickup attempts."
-);
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many OTP attempts.",
+    });
+  },
+});
+
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(req.auth?.id, "upload"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Upload limit exceeded.",
+    });
+  },
+});
+
+export const pricingLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(`${req.auth?.id}:${req.params?.id}`, "pricing"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many pricing attempts.",
+    });
+  },
+});
+
+export const paymentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(`${req.auth?.id}:${req.params?.id}`, "payment"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many payment attempts.",
+    });
+  },
+});
+
+export const pickupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(`${req.auth?.id}:${req.params?.id}`, "pickup"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many pickup attempts.",
+    });
+  },
+});
+
+export const vendorForgotOtpSendLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(req.body?.phone, "vendor-forgot-send"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many reset attempts. Try again later.",
+    });
+  },
+});
+
+export const vendorForgotOtpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  keyGenerator: (req: Request): string =>
+    safeKey(req.body?.phone, "vendor-forgot-verify"),
+
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many OTP attempts. Please retry later.",
+    });
+  },
+});

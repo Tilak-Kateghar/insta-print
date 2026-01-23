@@ -25,9 +25,6 @@ server.listen(PORT, () => {
   logger.info({ port: PORT }, "SERVER_STARTED");
 });
 
-/**
- * Graceful shutdown handler
- */
 async function shutdown(signal: string) {
   logger.warn({ signal }, "SHUTDOWN_INITIATED");
 
@@ -44,7 +41,6 @@ async function shutdown(signal: string) {
     }
   });
 
-  // Force exit if stuck (safety net)
   setTimeout(() => {
     logger.fatal("FORCED_SHUTDOWN");
     process.exit(1);

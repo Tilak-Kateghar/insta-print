@@ -1,4 +1,3 @@
-// admin.routes.ts
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { authGuard } from "../middlewares/authGuard";
@@ -52,7 +51,32 @@ router.post("/login", async (req, res) => {
     sameSite: "strict",
   });
 
+  res.cookie("role", "ADMIN", {
+    httpOnly: false,
+    sameSite: "strict",
+  });
+
   res.json({ message: "Admin logged in" });
+});
+
+router.post("/logout", async (_req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    sameSite: "strict",
+  });
+
+  res.clearCookie("role", {
+    httpOnly: false,
+    sameSite: "strict",
+  });
+
+  res.json({ message: "Admin logged out" });
 });
 
 export default router;

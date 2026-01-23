@@ -16,9 +16,6 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET not set");
 }
 
-/**
- * Verifies JWT and enforces payload shape
- */
 export function verifyJwt(token: string): AuthJwtPayload {
   const decoded = jwt.verify(token, JWT_SECRET) as unknown;
 

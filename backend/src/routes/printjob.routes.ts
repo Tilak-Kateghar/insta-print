@@ -14,16 +14,17 @@ import { webhookAuth } from "../middlewares/webhookAuth";
 import { AppError } from "../utils/AppError";
 import { authGuard } from "../middlewares/authGuard";
 import { upload } from "../middlewares/upload";
+import { uploadLimiter } from "../middlewares/customLimiters";
 import FileType from "file-type";
 import { supabase } from "../lib/supabase";
 
 const router = Router();
 
-// User creates a print job
 router.post(
   "/",
   authGuard(["USER"]),
   upload.single("file"),
+  uploadLimiter,
   asyncHandler(async (req, res) => {
     const userId = req.auth!.id;
 
@@ -54,16 +55,13 @@ router.post(
     }
 
     const ALLOWED_MIME_TYPES = [
-      // Documents
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 
-      // Images
       "image/jpeg",
       "image/png",
 
-      // Presentations
       "application/vnd.ms-powerpoint",
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ];
@@ -77,7 +75,6 @@ router.post(
       return res.status(400).json({ error: "Invalid or unsupported file type" });
     }
 
-    // 1️⃣ Create job FIRST (empty fileUrl)
     const job = await prisma.printJob.create({
       data: {
         fileUrl: "",
@@ -89,11 +86,9 @@ router.post(
       },
     });
 
-    // 2️⃣ Build storage key
     const ext = req.file.originalname.split(".").pop() || "pdf";    
     const fileKey = `print-jobs/${job.id}/original.${ext}`;
 
-    // 3️⃣ Upload to Supabase (PRIVATE)
     const { error } = await supabase.storage
       .from(process.env.SUPABASE_STORAGE_BUCKET!)
       .upload(fileKey, req.file.buffer, {
@@ -106,7 +101,6 @@ router.post(
       throw error;
     }
 
-    // 4️⃣ Save fileKey in DB
     await prisma.printJob.update({
       where: { id: job.id },
       data: { fileUrl: fileKey },
@@ -116,7 +110,6 @@ router.post(
   })
 );
 
-// User views their own print jobs
 router.get(
   "/my",
   authGuard(["USER"]),
@@ -130,11 +123,19 @@ router.get(
     }
 
     const jobs = await prisma.printJob.findMany({
-      where: {
-        userId: user.id, // 🔐 ownership enforced
-      },
-      orderBy: {
-        createdAt: "desc",
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        vendor: {
+          select: {
+            shopName: true,
+            ownerName: true,
+          },
+        },
+        payment: true,
+        pickupOtp: {
+          select: { otp: true },
+        },
       },
     });
 
@@ -164,7 +165,6 @@ router.get(
       return res.status(404).json({ error: "File not found" });
     }
 
-    // 🔐 Ownership enforcement
     if (
       (role === "USER" && job.userId !== actorId) ||
       (role === "VENDOR" && job.vendorId !== actorId)
@@ -172,7 +172,6 @@ router.get(
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    // ⏳ Generate signed URL (5 minutes)
     const { data, error } = await supabase.storage
       .from(process.env.SUPABASE_STORAGE_BUCKET!)
       .createSignedUrl(job.fileUrl, 300);
@@ -188,7 +187,6 @@ router.get(
   })
 );
 
-// Vendor views jobs assigned to them
 router.get(
   "/vendor/my",
   authGuard(["VENDOR"]),
@@ -203,18 +201,30 @@ router.get(
 
     const jobs = await prisma.printJob.findMany({
       where: {
-        vendorId: req.auth!.id, // 🔐 enforced
+        vendorId: req.auth!.id,
       },
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        user: {
+          select: { phone: true },
+        },
+      },
     });
 
-    return res.status(200).json({ jobs });
+    return res.status(200).json({ 
+      vendor: {
+        id: vendor.id,
+        shopName: vendor.shopName,
+        ownerName: vendor.ownerName,
+        phone: vendor.phone,
+      },
+      jobs 
+    });
   })
 );
 
-// Vendor views earnings ledger
 router.get(
   "/vendor/earnings",
   authGuard(["VENDOR"]),
@@ -245,7 +255,102 @@ router.get(
   })
 );
 
-// Vendor earnings summary
+router.post(
+  "/vendor/settle",
+  authGuard(["VENDOR"]),
+  asyncHandler(async (req, res) => {
+    const vendorId = req.auth!.id;
+
+    const unsettled = await prisma.vendorEarning.findMany({
+      where: {
+        vendorId,
+        settledAt: null,
+      },
+    });
+
+    if (unsettled.length === 0) {
+      return res.status(400).json({ error: "No earnings to settle" });
+    }
+
+    const settlementRef = `VENDOR_SETTLE_${Date.now()}`;
+
+    await prisma.$transaction(async (tx) => {
+      for (const e of unsettled) {
+        await tx.vendorEarning.update({
+          where: { id: e.id },
+          data: {
+            settledAt: new Date(),
+            settlementRef,
+          },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          entityType: "VENDOR",
+          entityId: vendorId,
+          action: "SELF_SETTLED",
+          actorType: "VENDOR",
+          actorId: vendorId,
+          metadata: {
+            settlementRef,
+            jobsSettled: unsettled.length,
+          },
+        },
+      });
+    });
+
+    res.json({
+      message: "Settlement completed",
+      settlementRef,
+      jobsSettled: unsettled.length,
+    });
+  })
+);
+
+router.get(
+  "/vendor/:id",
+  authGuard(["VENDOR"]),
+  asyncHandler(async (req, res) => {
+    const jobId = String(req.params.id);
+
+    const job = await prisma.printJob.findUnique({
+      where: { id: jobId },
+      include: {
+        user: {
+          select: { phone: true },
+        },
+        payment: true,
+      },
+    });
+
+    if (!job || job.vendorId !== req.auth!.id) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    return res.json({ job });
+  })
+);
+
+router.get(
+  "/admin/vendors/pending-settlement",
+  authGuard(["ADMIN"]),
+  asyncHandler(async (req, res) => {
+    const unsettled = await prisma.vendorEarning.groupBy({
+      by: ["vendorId"],
+      where: { settledAt: null },
+      _sum: { netAmount: true },
+    });
+
+    res.json({
+      vendors: unsettled.map(v => ({
+        vendorId: v.vendorId,
+        totalNet: v._sum.netAmount || 0,
+      })),
+    });
+  })
+);
+
 router.get(
   "/vendor/earnings/summary",
   authGuard(["VENDOR"]),
@@ -298,7 +403,6 @@ router.get(
   })
 );
 
-// Vendor updates job status
 router.patch(
   "/:id/status",
   authGuard(["VENDOR"]),
@@ -312,23 +416,12 @@ router.patch(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
-    // if (typeof jobId !== "string") {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
     const { status } = req.body as { status: PrintJobStatus };
 
-    // validate status
     if (!Object.values(PrintJobStatus).includes(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
-    // validate allowed enum values
     if (status !== PrintJobStatus.READY) {
       return res.status(400).json({ error: "Invalid status value" });
     }
@@ -355,12 +448,11 @@ router.patch(
       return res.status(400).json({ error: "Price not accepted by user" });
     }
 
-    // enforce valid transitions
     const validTransitions: Record<PrintJobStatus, PrintJobStatus | null> = {
       PENDING: PrintJobStatus.READY,
       READY: null,
       COMPLETED: null,
-      CANCELLED: null, // 🔒 terminal state
+      CANCELLED: null,
     };
 
     if (validTransitions[job.status] !== nextStatus) {
@@ -378,7 +470,42 @@ router.patch(
   })
 );
 
-// Vendor generates pickup OTP for a READY job
+router.get(
+  "/:id",
+  authGuard(["USER"]),
+  asyncHandler(async (req, res) => {
+    const jobId = String(req.params.id);
+
+    const job = await prisma.printJob.findUnique({
+      where: { id: jobId },
+      include: {
+        vendor: {
+          select: {
+            shopName: true,
+          },
+        },
+        payment: {
+          select: {
+            status: true,
+            method: true,
+          },
+        },
+        pickupOtp: {
+          select: {
+            otp: true,
+          },
+        },
+      },
+    });
+
+    if (!job || job.userId !== req.auth!.id) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    return res.json({ job });
+  })
+);
+
 router.post(
   "/:id/pickup-otp",
   pickupLimiter,
@@ -393,15 +520,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
-    // if (typeof jobId !== "string") {
-    //   return res.status(400).json({ error: "Invalid job id" });
-    // }
-
     const job = await prisma.printJob.findUnique({
       where: { id: jobId },
       include: {
@@ -442,9 +560,6 @@ router.post(
       return res.status(400).json({ error: "Offline payment not confirmed" });
     }
 
-    /* ✅ THEN continue to OTP existence check + generation */
-
-    // 🚫 Prevent OTP re-generation
     const existingOtp = await prisma.pickupOtp.findUnique({
       where: { jobId },
     });
@@ -455,7 +570,6 @@ router.post(
       });
     }
 
-    // generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -468,18 +582,17 @@ router.post(
       },
     });
 
-    // DEV ONLY: log OTP
     if (process.env.NODE_ENV !== "production") {
       logger.debug({ jobId }, "PICKUP_OTP_GENERATED");
     }
 
     return res.status(200).json({
       message: "Pickup OTP generated",
+      ...(process.env.NODE_ENV !== "production" && { otp }),
     });
   })
 );
 
-// Vendor verifies pickup OTP and completes job
 router.post(
   "/:id/verify-pickup",
   pickupLimiter,
@@ -496,11 +609,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
     const { otp } = req.body;
 
     if (typeof jobId !== "string" || typeof otp !== "string") {
@@ -533,7 +641,6 @@ router.post(
       return res.status(400).json({ error: "Price not accepted" });
     }
 
-    // 🔒 PAYMENT ENFORCEMENT
     if (
       payment.method === PaymentMethod.ONLINE &&
       payment.status !== PaymentStatus.PAID
@@ -550,7 +657,6 @@ router.post(
       });
     }
 
-    // 🔐 OTP VALIDATION
     const pickupOtp = await prisma.pickupOtp.findUnique({
       where: { jobId },
     });
@@ -568,15 +674,12 @@ router.post(
       return res.status(400).json({ error: "OTP expired" });
     }
 
-    // ✅ COMPLETE JOB ATOMICALLY
     await prisma.$transaction(async (tx) => {
-      // 1️⃣ Complete job
       await tx.printJob.update({
         where: { id: jobId },
         data: { status: PrintJobStatus.COMPLETED },
       });
 
-      // 🔍 AUDIT — JOB COMPLETED
       await tx.auditLog.create({
         data: {
           entityType: "PRINT_JOB",
@@ -587,12 +690,10 @@ router.post(
         },
       });
 
-      // 2️⃣ Delete OTP
       await tx.pickupOtp.delete({
         where: { id: pickupOtp.id },
       });
 
-      // 3️⃣ Create vendor earning ledger
       const gross = payment.amount;
       const platformFee = Math.floor(gross * 0.1);
       const net = gross - platformFee;
@@ -614,99 +715,52 @@ router.post(
   })
 );
 
-// Vendor sets price for a READY job
 router.post(
   "/:id/set-price",
-  pricingLimiter,
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
-    const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
-    });
+    const jobId = req.params.id;
+    const price = Number(req.body.price);
 
-    if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
-    }
-
-    const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
-    const { price } = req.body;
-
-    if (typeof jobId !== "string" || typeof price !== "number" || price <= 0) {
-      return res.status(400).json({ error: "Invalid price data" });
+    if (!price || price <= 0) {
+      throw new AppError("Invalid price", 400);
     }
 
     const job = await prisma.printJob.findUnique({
       where: { id: jobId },
-      select: {
-        id: true,
-        vendorId: true,
-        status: true,
-        price: true,
-        copies: true,
-        colorMode: true,
-        paperSize: true,
-        payment: true,
-        pickupOtp: true,
-      },
     });
 
     if (!job || job.vendorId !== req.auth!.id) {
-      return res.status(404).json({ error: "Print job not found" });
+      throw new AppError("Unauthorized", 403);
     }
 
-    if (job.status !== "PENDING") {
-      return res.status(400).json({
-        error: "Price can be set only for PENDING jobs",
-      });
+    let rate = 0;
+    if (job.colorMode === "BLACK_WHITE") {
+      rate = job.paperSize === "A3" ? 5 : 2;
+    } else {
+      rate = job.paperSize === "A3" ? 10 : 5;
     }
 
-    if (job.price !== null) {
-      return res
-        .status(400)
-        .json({ error: "Price already set for this job" });
+    const base = job.copies * rate;
+    const min = base;
+    const max = base * 2;
+
+    if (price < min || price > max) {
+      throw new AppError(
+        `Price must be between ₹${min} and ₹${max}`,
+        400
+      );
     }
 
-    // price sanity checks FIRST
-
-    const MIN_BW_A4 = 100;
-    const MIN_COLOR_A4 = 300;
-
-    const basePerCopy =
-      job.colorMode === "COLOR" ? MIN_COLOR_A4 : MIN_BW_A4;
-
-    const sizeMultiplier = job.paperSize === "A3" ? 2 : 1;
-
-    const minExpected =
-      basePerCopy * sizeMultiplier * job.copies;
-
-    if (price < minExpected) {
-      return res.status(400).json({
-        error: "Price too low for selected print options",
-        minExpected,
-      });
-    }
-
-    const updatedJob = await prisma.printJob.update({
+    const updated = await prisma.printJob.update({
       where: { id: jobId },
-      data: {
-        price,
-        pricedAt: new Date(),
-      },
+      data: { price },
     });
 
-    return res.status(200).json({
-      message: "Price set successfully",
-      printJob: updatedJob,
-    });
+    res.json({ job: updated });
   })
 );
 
-// User accepts price for a READY job
 router.post(
   "/:id/accept-price",
   authGuard(["USER"]),
@@ -720,15 +774,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
-    // if (typeof jobId !== "string") {
-    //   return res.status(400).json({ error: "Invalid job id" });
-    // }
-
     const job = await prisma.printJob.findUnique({
       where: { id: jobId },
       include: {
@@ -768,7 +813,6 @@ router.post(
   })
 );
 
-// User chooses payment method and creates payment intent
 router.post(
   "/:id/pay",
   paymentLimiter,
@@ -783,11 +827,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
     const { method, idempotencyKey } = req.body;
 
     if (!idempotencyKey) {
@@ -795,16 +834,14 @@ router.post(
     }
 
     const updatedPayment = await prisma.$transaction(async (tx) => {
-      // 1️⃣ Check existing payment by idempotency key
       const existing = await tx.payment.findUnique({
         where: { idempotencyKey },
       });
 
       if (existing) {
-        return existing; // 🔁 safe retry
+        return existing;
       }
 
-      // 2️⃣ Lock job row
       const job = await tx.printJob.findUnique({
         where: { id: jobId },
         include: {
@@ -824,10 +861,9 @@ router.post(
       }
 
       if (payment) {
-        return payment; // idempotent
+        return payment;
       }
 
-      // 3️⃣ Create payment exactly once
       const created = await tx.payment.create({
         data: {
           jobId: job.id,
@@ -838,7 +874,6 @@ router.post(
         },
       });
 
-      // 4️⃣ Audit (inside transaction)
       await tx.auditLog.create({
         data: {
           entityType: "PAYMENT",
@@ -864,7 +899,65 @@ router.post(
   })
 );
 
-// Vendor confirms offline payment
+router.post(
+  "/:id/mock-pay-success",
+  authGuard(["USER"]),
+  asyncHandler(async (req, res) => {
+    const jobId = req.params.id;
+
+    const job = await prisma.printJob.findUnique({
+      where: { id: jobId },
+      include: { payment: true },
+    });
+
+    if (!job || job.userId !== req.auth!.id) {
+      throw new AppError("Unauthorized", 403);
+    }
+
+    if (!job.payment) {
+      throw new AppError("Payment not found", 400);
+    }
+
+    const updated = await prisma.payment.update({
+      where: { id: job.payment.id },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+      },
+    });
+
+    return res.json({
+      message: "Mock payment marked as PAID",
+      payment: updated,
+    });
+  })
+);
+
+router.post(
+  "/:id/mock-refund-success",
+  authGuard(["USER"]),
+  asyncHandler(async (req, res) => {
+    const job = await prisma.printJob.findUnique({
+      where: { id: req.params.id },
+      include: { payment: true },
+    });
+
+    if (!job?.payment) {
+      throw new AppError("Payment not found", 400);
+    }
+
+    const updated = await prisma.payment.update({
+      where: { id: job.payment.id },
+      data: {
+        status: "REFUNDED",
+        refundedAt: new Date(),
+      },
+    });
+
+    res.json({ payment: updated });
+  })
+);
+
 router.post(
   "/:id/confirm-offline-payment",
   strictLimiter,
@@ -879,11 +972,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
     const job = await prisma.printJob.findUnique({
       where: { id: jobId },
       include: {
@@ -913,7 +1001,6 @@ router.post(
       });
     }
 
-    // ✅ only here do we mutate state
     const updatedPayment = await prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -930,7 +1017,6 @@ router.post(
   })
 );
 
-//cancel
 router.post(
   "/:id/cancel",
   strictLimiter,
@@ -945,11 +1031,6 @@ router.post(
     }
 
     const jobId = String(req.params.id);
-
-    // if (!jobId) {
-    //   throw new AppError("Invalid job id", 400);
-    // }
-
     const job = await prisma.printJob.findUnique({
       where: { id: jobId },
       include: {
@@ -964,8 +1045,10 @@ router.post(
 
     const payment = job.payment;
 
-    if (!payment) {
-      return res.status(400).json({ error: "Payment not created" });
+    if (job.pickupOtp) {
+      return res
+        .status(400)
+        .json({ error: "Pickup already initiated" });
     }
 
     if (job.status === PrintJobStatus.COMPLETED) {
@@ -994,14 +1077,22 @@ router.post(
     }
 
     await prisma.$transaction(async (tx) => {
-      // 💳 Payment handling
-      if (payment.method === PaymentMethod.ONLINE) {
-        if (payment.status === PaymentStatus.PAID) {
-          await tx.payment.update({
-            where: { id: payment.id },
-            data: { status: PaymentStatus.REFUND_PENDING },
-          });
-        } else {
+      if (payment) {
+        if (payment.method === PaymentMethod.ONLINE) {
+          if (payment.status === PaymentStatus.PAID) {
+            await tx.payment.update({
+              where: { id: payment.id },
+              data: { status: PaymentStatus.REFUND_PENDING },
+            });
+          } else {
+            await tx.payment.update({
+              where: { id: payment.id },
+              data: { status: PaymentStatus.CANCELLED },
+            });
+          }
+        }
+
+        if (payment.method === PaymentMethod.OFFLINE) {
           await tx.payment.update({
             where: { id: payment.id },
             data: { status: PaymentStatus.CANCELLED },
@@ -1009,20 +1100,11 @@ router.post(
         }
       }
 
-      if (payment.method === PaymentMethod.OFFLINE) {
-        await tx.payment.update({
-          where: { id: payment.id },
-          data: { status: PaymentStatus.CANCELLED },
-        });
-      }
-
-      // 🧾 Cancel job
       await tx.printJob.update({
         where: { id: job.id },
         data: { status: PrintJobStatus.CANCELLED },
       });
 
-      // 🔍 AUDIT — JOB CANCELLED
       await tx.auditLog.create({
         data: {
           entityType: "PRINT_JOB",
@@ -1031,8 +1113,8 @@ router.post(
           actorType: "USER",
           actorId: user.id,
           metadata: {
-            paymentStatus: payment.status,
-            paymentMethod: payment.method,
+            hadPayment: Boolean(payment),
+            paymentStatus: payment?.status ?? null,
           },
         },
       });
@@ -1044,7 +1126,6 @@ router.post(
   })
 );
 
-//webhook/payment
 router.post(
   "/webhook/payment",
   webhookAuth,
@@ -1094,7 +1175,6 @@ router.post(
   })
 );
 
-//webhook/refund
 router.post(
   "/webhook/refund",
   webhookAuth,
@@ -1110,7 +1190,6 @@ router.post(
       return res.status(404).json({ error: "Payment not found" });
     }
 
-    // 🔒 Idempotency
     if (payment.status === PaymentStatus.REFUNDED) {
       return res.status(200).json({ ok: true });
     }
@@ -1128,7 +1207,6 @@ router.post(
         },
       });
     } else {
-      // refund failed → manual intervention
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
@@ -1152,7 +1230,6 @@ router.post(
   })
 );
 
-// Admin settles vendor earnings
 router.post(
   "/admin/vendors/:vendorId/settle",
   authGuard(["ADMIN"]),
@@ -1205,7 +1282,6 @@ router.post(
         });
       }
 
-      // 🔍 AUDIT — VENDOR SETTLEMENT
       await tx.auditLog.create({
         data: {
           entityType: "VENDOR",
@@ -1228,6 +1304,68 @@ router.post(
       settlementRef,
       totalPayout,
       jobsSettled: unsettled.length,
+    });
+  })
+);
+
+router.post(
+  "/vendor/settle",
+  authGuard(["VENDOR"]),
+  asyncHandler(async (req, res) => {
+    const vendorId = req.auth!.id;
+
+    const unsettled = await prisma.vendorEarning.findMany({
+      where: {
+        vendorId,
+        settledAt: null,
+      },
+    });
+
+    if (unsettled.length === 0) {
+      return res.status(400).json({
+        error: "No earnings to settle",
+      });
+    }
+
+    const settlementRef = `VENDOR_SETTLE_${Date.now()}`;
+
+    const totalAmount = unsettled.reduce(
+      (sum, e) => sum + e.netAmount,
+      0
+    );
+
+    await prisma.$transaction(async (tx) => {
+      for (const earning of unsettled) {
+        await tx.vendorEarning.update({
+          where: { id: earning.id },
+          data: {
+            settledAt: new Date(),
+            settlementRef,
+          },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          entityType: "VENDOR",
+          entityId: vendorId,
+          action: "SELF_SETTLED",
+          actorType: "VENDOR",
+          actorId: vendorId,
+          metadata: {
+            settlementRef,
+            totalAmount,
+            jobsSettled: unsettled.length,
+          },
+        },
+      });
+    });
+
+    return res.json({
+      message: "Earnings settled successfully",
+      totalAmount,
+      jobsSettled: unsettled.length,
+      settlementRef,
     });
   })
 );

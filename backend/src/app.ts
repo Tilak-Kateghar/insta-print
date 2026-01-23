@@ -8,7 +8,6 @@ import printJobRoutes from "./routes/printjob.routes";
 import { moderateLimiter } from "./middlewares/rateLimit";
 import { requestLogger } from "./middlewares/requestLogger";
 import { authGuard } from "./middlewares/authGuard";
-import { uploadLimiter } from "./middlewares/customLimiters";
 import cookieParser from "cookie-parser";
 import { AppError } from "./utils/AppError";
 import { logger } from "./lib/logger";
@@ -16,23 +15,34 @@ import type { Request, Response, NextFunction } from "express";
 
 const app = express();
 app.use(requestLogger);
-app.use(cors());
+
+const corsOrigins = process.env.CORS_ORIGINS?.split(",") || [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://localhost:3003",
+];
+
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  })
+);
 app.use(moderateLimiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use("/vendors", vendorRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
-app.use("/print-jobs", uploadLimiter, printJobRoutes);
+app.use("/print-jobs", printJobRoutes);
 
-// FINAL error handler — must be LAST middleware
 app.use((
   err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  // Known application error
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       error: err.message,
@@ -40,7 +50,6 @@ app.use((
     });
   }
 
-  // Unknown / programmer error
   logger.error({ err }, "UNHANDLED_ERROR");
 
   return res.status(500).json({

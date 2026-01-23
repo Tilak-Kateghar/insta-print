@@ -11,7 +11,6 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.code = code;
 
-    // Restore prototype chain (important for instanceof)
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }

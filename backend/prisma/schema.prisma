@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -13,13 +13,14 @@ enum Role {
 }
 
 model User {
-  id         String      @id @default(uuid())
-  name       String? // 👈 OPTIONAL
-  phone      String      @unique
-  isVerified Boolean     @default(false)
-  printJobs  PrintJob[]
-  pickupOtps PickupOtp[]
-  role  Role @default(USER)
+  id           String      @id @default(uuid())
+  name         String?
+  phone        String      @unique
+  isVerified   Boolean     @default(false)
+  printJobs    PrintJob[]
+  pickupOtps   PickupOtp[]
+  role         Role        @default(USER)
+  passwordHash String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,6 +41,14 @@ model Vendor {
   updatedAt DateTime @updatedAt
 }
 
+model VendorPasswordReset {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  otpHash   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
 model UserOtp {
   id        String   @id @default(uuid())
   phone     String   @unique
@@ -48,6 +57,7 @@ model UserOtp {
   expiresAt DateTime
 
   createdAt DateTime @default(now())
+
   @@index([phone])
 }
 
@@ -80,10 +90,10 @@ model PrintJob {
 
   user            User           @relation(fields: [userId], references: [id])
   vendor          Vendor         @relation(fields: [vendorId], references: [id])
-  colorMode PrintColorMode @default(BLACK_WHITE)
-  paperSize PaperSize @default(A4)
+  colorMode       PrintColorMode @default(BLACK_WHITE)
+  paperSize       PaperSize      @default(A4)
   pickupOtp       PickupOtp?
-  price           Int? // price in paise (₹1 = 100)
+  price           Int?
   pricedAt        DateTime?
   priceAccepted   Boolean        @default(false)
   priceAcceptedAt DateTime?
@@ -138,7 +148,7 @@ model Payment {
   amount           Int
   method           PaymentMethod @default(ONLINE)
   status           PaymentStatus @default(INITIATED)
-  gatewayPaymentId String? // Razorpay/Stripe ID
+  gatewayPaymentId String?
   gatewayOrderId   String?
   failureReason    String?
   idempotencyKey   String?       @unique
@@ -167,7 +177,7 @@ model VendorEarning {
   status        EarningStatus @default(PENDING)
   createdAt     DateTime      @default(now())
   settledAt     DateTime?
-  settlementRef String? // bank txn id / batch id
+  settlementRef String?
 
   vendor Vendor   @relation(fields: [vendorId], references: [id])
   job    PrintJob @relation(fields: [jobId], references: [id])
@@ -185,11 +195,11 @@ enum EarningStatus {
 
 model AuditLog {
   id         String   @id @default(uuid())
-  entityType String // "PAYMENT" | "VENDOR_EARNING" | "SETTLEMENT"
+  entityType String
   entityId   String
-  action     String // "CREATED" | "PAID" | "REFUND_INITIATED" | "SETTLED"
+  action     String
   metadata   Json?
-  actorType  String // "USER" | "VENDOR" | "ADMIN" | "SYSTEM"
+  actorType  String
   actorId    String?
   createdAt  DateTime @default(now())
 

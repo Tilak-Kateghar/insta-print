@@ -1,0 +1,89 @@
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================================
+# Build Artifacts
+# ==========================================
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================================
+# Database
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+prisma/*.db
+prisma/*.db-journal
+
+# ==========================================
+# IDE & Editor
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Secrets & Certificates
+# ==========================================
+*.pem
+*.key
+*.crt
+*.cer
+private.pem
+public.pem
+
+# ==========================================
+# Testing
+# ==========================================
+coverage/
+.nyc_output/
+
+# ==========================================
+# OS Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# Supabase
+# ==========================================
+supabase/.env
+supabase/localhost-key.pem
+supabase/localhost.pem
+
+# ==========================================
+# TypeScript
+# ==========================================
+*.tsbuildinfo
+
