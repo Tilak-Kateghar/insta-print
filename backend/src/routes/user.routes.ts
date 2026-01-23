@@ -107,8 +107,8 @@ router.post(
 
     const cookieOptions = {
       httpOnly: true,
-      secure: !isDev,
-      sameSite: (isDev ? "lax" : "strict") as "strict" | "lax",
+      secure: true,
+      sameSite: "none" as const,
     };
 
     res.cookie("access_token", token, cookieOptions);
@@ -156,10 +156,10 @@ router.get(
       user,
       summary: {
         totalJobs: jobs.length,
-        completedJobs: jobs.filter(j => j.status === "COMPLETED").length,
-        cancelledJobs: jobs.filter(j => j.status === "CANCELLED").length,
-        pendingJobs: jobs.filter(j => j.status === "PENDING").length,
-        totalSpent: jobs.reduce((s, j) => s + (j.price ?? 0), 0),
+        completedJobs: jobs.filter((j: typeof jobs[0]) => j.status === "COMPLETED").length,
+        cancelledJobs: jobs.filter((j: typeof jobs[0]) => j.status === "CANCELLED").length,
+        pendingJobs: jobs.filter((j: typeof jobs[0]) => j.status === "PENDING").length,
+        totalSpent: jobs.reduce((s: number, j: typeof jobs[0]) => s + (j.price ?? 0), 0),
       },
       jobs,
     });
@@ -171,8 +171,8 @@ router.post(
   asyncHandler(async (_req: Request, res: Response) => {
     const cookieOptions = {
       httpOnly: true,
-      secure: !isDev,
-      sameSite: isDev ? "lax" : "strict" as const,
+      secure: true,
+      sameSite: "none" as const,
     } as const;
 
     res.clearCookie("access_token", cookieOptions);

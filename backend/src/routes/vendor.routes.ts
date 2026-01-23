@@ -104,8 +104,8 @@ router.post(
 
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: (process.env.NODE_ENV === "production" ? "strict" : "lax") as "strict" | "lax",
+      secure: true,
+      sameSite: "none" as const,
     };
 
     res.cookie("access_token", token, cookieOptions);
@@ -261,8 +261,8 @@ router.post(
   asyncHandler(async (_req: Request, res: Response) => {
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: (process.env.NODE_ENV === "production" ? "strict" : "lax") as "strict" | "lax",
+      secure: true,
+      sameSite: "none" as const,
     };
 
     res.clearCookie("access_token", cookieOptions);

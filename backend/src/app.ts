@@ -16,17 +16,21 @@ import type { Request, Response, NextFunction } from "express";
 const app = express();
 app.use(requestLogger);
 
-const corsOrigins = process.env.CORS_ORIGINS?.split(",") || [
+const allowedOrigins = [
   "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002",
-  "http://localhost:3003",
+  "https://insta-print.onrender.com"
 ];
 
 app.use(
   cors({
-    origin: corsOrigins,
-    credentials: true,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS not allowed"));
+    },
+    credentials: true
   })
 );
 app.use(moderateLimiter);
