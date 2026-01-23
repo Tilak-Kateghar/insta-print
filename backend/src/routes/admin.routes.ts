@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { authGuard } from "../middlewares/authGuard";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -18,7 +18,7 @@ const router = Router();
 router.get(
   "/me", 
   authGuard(["ADMIN"]), 
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const adminId = req.auth?.id;
     
     if (!adminId) {
@@ -45,7 +45,7 @@ router.get(
 
 router.post(
   "/login", 
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { phone } = req.body;
 
     if (!phone || typeof phone !== "string") {
@@ -84,7 +84,7 @@ router.post(
 
 router.post(
   "/logout", 
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

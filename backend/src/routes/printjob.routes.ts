@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { PrintJobStatus } from "@prisma/client";
 import { PaymentMethod, PaymentStatus } from "@prisma/client";
@@ -25,7 +25,7 @@ router.post(
   authGuard(["USER"]),
   upload.single("file"),
   uploadLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -116,7 +116,7 @@ router.post(
 router.get(
   "/my",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -154,7 +154,7 @@ router.get(
 router.get(
   "/:id/file",
   authGuard(["USER", "VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const jobId = String(req.params.id);
     const actorId = req.auth!.id;
     const role = req.auth!.role;
@@ -198,7 +198,7 @@ router.get(
 router.get(
   "/vendor/my",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -241,7 +241,7 @@ router.get(
 router.get(
   "/vendor/earnings",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -276,7 +276,7 @@ router.get(
 router.post(
   "/vendor/settle",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -332,7 +332,7 @@ router.post(
 router.get(
   "/vendor/:id",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -361,7 +361,7 @@ router.get(
 router.get(
   "/admin/vendors/pending-settlement",
   authGuard(["ADMIN"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const unsettled = await prisma.vendorEarning.groupBy({
       by: ["vendorId"],
       where: { settledAt: null },
@@ -380,7 +380,7 @@ router.get(
 router.get(
   "/vendor/earnings/summary",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -437,7 +437,7 @@ router.get(
 router.patch(
   "/:id/status",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -509,7 +509,7 @@ router.patch(
 router.get(
   "/:id",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const jobId = String(req.params.id);
 
     const job = await prisma.printJob.findUnique({
@@ -546,7 +546,7 @@ router.post(
   "/:id/pickup-otp",
   pickupLimiter,
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -638,7 +638,7 @@ router.post(
   "/:id/verify-pickup",
   pickupLimiter,
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     logger.info("🔥 VERIFY PICKUP ROUTE HIT");
 
     const vendorId = req.auth?.id;
@@ -764,7 +764,7 @@ router.post(
 router.post(
   "/:id/set-price",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const jobId = req.params.id;
     const price = Number(req.body.price);
 
@@ -792,7 +792,7 @@ router.post(
 router.post(
   "/:id/accept-price",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -850,7 +850,7 @@ router.post(
   "/:id/pay",
   paymentLimiter,
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -940,7 +940,7 @@ router.post(
 router.post(
   "/:id/mock-pay-success",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -979,7 +979,7 @@ router.post(
 router.post(
   "/:id/mock-refund-success",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const job = await prisma.printJob.findUnique({
       where: { id: req.params.id },
       include: { payment: true },
@@ -1005,7 +1005,7 @@ router.post(
   "/:id/confirm-offline-payment",
   strictLimiter,
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -1069,7 +1069,7 @@ router.post(
   "/:id/cancel",
   strictLimiter,
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");
@@ -1182,7 +1182,7 @@ router.post(
 router.post(
   "/webhook/payment",
   webhookAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { orderId, paymentId, status } = req.body;
 
     const payment = await prisma.payment.findFirst({
@@ -1231,7 +1231,7 @@ router.post(
 router.post(
   "/webhook/refund",
   webhookAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { paymentId, refundId, status } = req.body;
 
     const payment = await prisma.payment.findUnique({
@@ -1286,7 +1286,7 @@ router.post(
 router.post(
   "/admin/vendors/:vendorId/settle",
   authGuard(["ADMIN"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
 
     const admin = await prisma.user.findUnique({
       where: { id: req.auth!.id }
@@ -1364,7 +1364,7 @@ router.post(
 router.post(
   "/vendor/settle",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");

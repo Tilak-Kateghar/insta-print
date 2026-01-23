@@ -35,7 +35,6 @@ app.use("/vendors", vendor_routes_1.default);
 app.use("/users", user_routes_1.default);
 app.use("/admin", admin_routes_1.default);
 app.use("/print-jobs", printjob_routes_1.default);
-// Global error handler
 app.use((err, _req, res, _next) => {
     if (err instanceof AppError_1.AppError) {
         return res.status(err.statusCode).json({
@@ -43,7 +42,6 @@ app.use((err, _req, res, _next) => {
             code: err.code ?? undefined,
         });
     }
-    // Handle Prisma errors
     if (err && typeof err === "object" && "code" in err) {
         const prismaError = err;
         if (prismaError.code === "P2002") {
@@ -59,10 +57,8 @@ app.use((err, _req, res, _next) => {
             });
         }
     }
-    // Log the error with safe serialization
     const safeError = err instanceof Error ? { message: err.message, name: err.name, stack: err.stack } : String(err);
     logger_1.logger.error({ err: safeError }, "UNHANDLED_ERROR");
-    // Don't expose internal errors in production
     const isProduction = process.env.NODE_ENV === "production";
     return res.status(500).json({
         error: isProduction ? "Internal server error" : (err instanceof Error ? err.message : "Unknown error"),

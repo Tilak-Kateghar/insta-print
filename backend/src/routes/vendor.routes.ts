@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../lib/prisma";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -28,7 +28,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN
 router.post(
   "/signup",
   strictLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { shopName, ownerName, phone, password } = req.body;
 
     if (!shopName || !ownerName || !phone || !password) {
@@ -70,7 +70,7 @@ router.post(
 router.post(
   "/login",
   strictLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const phone = String(req.body.phone || "").trim();
     const password = String(req.body.password || "");
 
@@ -125,7 +125,7 @@ router.post(
 router.post(
   "/forgot-password",
   vendorForgotOtpSendLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const phone = String(req.body.phone || "").trim();
     
     if (!phone || phone.length < 10) {
@@ -175,7 +175,7 @@ router.post(
 router.post(
   "/verify-forgot-otp",
   vendorForgotOtpVerifyLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const phone = String(req.body.phone || "").trim();
     const otp = String(req.body.otp || "");
 
@@ -210,7 +210,7 @@ router.post(
 
 router.post(
   "/reset-password",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const phone = String(req.body.phone || "").trim();
     const otp = String(req.body.otp || "");
     const newPassword = String(req.body.newPassword || "");
@@ -258,7 +258,7 @@ router.post(
 
 router.post(
   "/logout",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -273,7 +273,7 @@ router.post(
 
 router.get(
   "/public",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     const vendors = await prisma.vendor.findMany({
       where: { isActive: true },
       select: {
@@ -292,7 +292,7 @@ router.get(
 router.get(
   "/me/dashboard",
   authGuard(["VENDOR"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const vendorId = req.auth?.id;
     if (!vendorId) {
       throw new AppError("Unauthorized", 401, "AUTH_ERROR");

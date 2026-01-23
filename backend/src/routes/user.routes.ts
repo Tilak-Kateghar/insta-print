@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { asyncHandler } from "../utils/asyncHandler";
 import { authGuard } from "../middlewares/authGuard";
@@ -20,7 +20,7 @@ if (!JWT_SECRET) {
 router.post(
   "/send-otp",
   otpSendLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { phone } = req.body;
 
     if (typeof phone !== "string" || phone.trim().length < 10) {
@@ -53,7 +53,7 @@ router.post(
 router.post(
   "/verify-otp",
   otpVerifyLimiter,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { phone, otp } = req.body;
 
     if (!phone || !otp) {
@@ -124,7 +124,7 @@ router.post(
 router.get(
   "/me/dashboard",
   authGuard(["USER"]),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.auth?.id;
     
     if (!userId) {
@@ -168,7 +168,7 @@ router.get(
 
 router.post(
   "/logout",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     const cookieOptions = {
       httpOnly: true,
       secure: !isDev,

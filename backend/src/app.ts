@@ -37,7 +37,6 @@ app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/print-jobs", printJobRoutes);
 
-// Global error handler
 app.use((
   err: unknown,
   _req: Request,
@@ -51,7 +50,6 @@ app.use((
     });
   }
 
-  // Handle Prisma errors
   if (err && typeof err === "object" && "code" in err) {
     const prismaError = err as { code: string; message?: string };
     if (prismaError.code === "P2002") {
@@ -68,11 +66,9 @@ app.use((
     }
   }
 
-  // Log the error with safe serialization
   const safeError = err instanceof Error ? { message: err.message, name: err.name, stack: err.stack } : String(err);
   logger.error({ err: safeError }, "UNHANDLED_ERROR");
 
-  // Don't expose internal errors in production
   const isProduction = process.env.NODE_ENV === "production";
   
   return res.status(500).json({

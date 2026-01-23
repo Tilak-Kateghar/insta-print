@@ -1,5 +1,5 @@
 import rateLimit from "express-rate-limit";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 
 const safeKey = (value?: string, prefix = "anon") =>
   value && value.length > 0 ? value : `${prefix}:unknown`;
@@ -13,7 +13,7 @@ export const otpSendLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(req.body?.phone, "otp-send"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     try {
       res.status(429).json({
         error: "Too many OTP requests. Try later.",
@@ -38,7 +38,7 @@ export const otpVerifyLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(req.body?.phone, "otp-verify"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many OTP attempts.",
       state: "rate_limited",
@@ -53,7 +53,7 @@ export const uploadLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(req.auth?.id, "upload"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Upload limit exceeded.",
       state: "rate_limited",
@@ -68,7 +68,7 @@ export const pricingLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(`${req.auth?.id}:${req.params?.id}`, "pricing"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many pricing attempts.",
       state: "rate_limited",
@@ -83,7 +83,7 @@ export const paymentLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(`${req.auth?.id}:${req.params?.id}`, "payment"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many payment attempts.",
       state: "rate_limited",
@@ -98,7 +98,7 @@ export const pickupLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(`${req.auth?.id}:${req.params?.id}`, "pickup"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many pickup attempts.",
       state: "rate_limited",
@@ -115,7 +115,7 @@ export const vendorForgotOtpSendLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(req.body?.phone, "vendor-forgot-send"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many reset attempts. Try again later.",
       state: "rate_limited",
@@ -132,7 +132,7 @@ export const vendorForgotOtpVerifyLimiter = rateLimit({
   keyGenerator: (req: Request): string =>
     safeKey(req.body?.phone, "vendor-forgot-verify"),
 
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: "Too many OTP attempts. Please retry later.",
       state: "rate_limited",
