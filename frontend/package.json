@@ -1,5 +1,8 @@
 {
   "name": "instaprint-frontend",
+  "engines": {
+    "node": ">=18 <21"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev",
