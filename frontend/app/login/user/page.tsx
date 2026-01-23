@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "@/lib/apiFetch";
+import { verifyUserAuth } from "@/lib/auth";
 import { Printer, ArrowRight, KeyRound, Check, Home } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -33,15 +33,21 @@ export default function UserLoginPage() {
     try {
       setLoading(true);
 
-      const res = await apiFetch<{ otp?: string }>("/users/send-otp", {
+      const res = await apiFetch<{ otp?: string; success?: boolean }>("/users/send-otp", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ phone }),
       });
 
+      // Show OTP for verification
       if (res?.otp) {
         setDevOtp(res.otp);
       }
 
+      // Move to OTP verification step
       setStep("OTP");
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
@@ -62,12 +68,27 @@ export default function UserLoginPage() {
     try {
       setLoading(true);
 
+      // Verify OTP first
       await apiFetch("/users/verify-otp", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ phone, otp }),
       });
 
-      router.replace("/dashboard");
+      // CRITICAL: Verify auth state by calling /user/me
+      // This confirms the cookie was properly set and auth is working
+      const isAuthenticated = await verifyUserAuth();
+
+      if (isAuthenticated) {
+        // Auth confirmed - redirect to dashboard
+        router.replace("/dashboard");
+      } else {
+        // Auth verification failed - cookie may not be set
+        setError("Authentication failed. Please try again or contact support.");
+      }
     } catch (err: any) {
       setError(err.message || "OTP verification failed");
     } finally {
@@ -94,7 +115,7 @@ export default function UserLoginPage() {
             <Printer className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">InstaPrint</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Printing Made Simple by Skipping the Queue's</p>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Printing Made Simple by Skipping the Queue&apos;s</p>
         </div>
 
         <Card>
@@ -139,8 +160,8 @@ export default function UserLoginPage() {
                     className="text-sm sm:text-base"
                   />
 
-                  {process.env.NODE_ENV !== "production" && devOtp && (
-                    <Alert variant="info" title="Development Mode">
+                  {devOtp && (
+                    <Alert variant="info" title="Verification Code">
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-bold">{devOtp}</span>
                         <Button
@@ -199,3 +220,4 @@ export default function UserLoginPage() {
     </div>
   );
 }
+

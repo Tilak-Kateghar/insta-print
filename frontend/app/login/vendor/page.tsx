@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "@/lib/apiFetch";
+import { verifyVendorAuth } from "@/lib/auth";
 import {
   Store,
   Phone,
@@ -40,12 +40,30 @@ export default function VendorLoginPage() {
     try {
       setLoading(true);
 
-      await apiFetch("/vendors/login", {
-        method: "POST",
-        body: JSON.stringify({ phone, password }),
-      });
+      // Login request
+      const res = await apiFetch<{ success?: boolean; role?: string; message?: string }>(
+        "/vendors/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ phone, password }),
+        }
+      );
 
-      router.replace("/vendor/dashboard");
+      // CRITICAL: Verify auth state by calling /vendor/me
+      // This confirms the cookie was properly set and auth is working
+      const isAuthenticated = await verifyVendorAuth();
+
+      if (isAuthenticated) {
+        // Auth confirmed - redirect to vendor dashboard
+        router.replace("/vendor/dashboard");
+      } else {
+        // Auth verification failed - cookie may not be set
+        setError("Authentication failed. Please try again or contact support.");
+      }
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.");
     } finally {
@@ -188,3 +206,4 @@ export default function VendorLoginPage() {
     </div>
   );
 }
+
