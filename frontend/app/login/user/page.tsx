@@ -67,7 +67,6 @@ export default function UserLoginPage() {
         body: JSON.stringify({ phone, otp }),
       });
 
-      // Try the main dashboard router first, which will redirect to the correct dashboard
       router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "OTP verification failed");

@@ -24,11 +24,16 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://insta-print.onrender.com",
-    ],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false); // IMPORTANT: no Error()
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
