@@ -26,6 +26,7 @@ CREATE TABLE "User" (
     "phone" TEXT NOT NULL,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "role" "Role" NOT NULL DEFAULT 'USER',
+    "passwordHash" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -44,6 +45,17 @@ CREATE TABLE "Vendor" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Vendor_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VendorPasswordReset" (
+    "id" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "otpHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "VendorPasswordReset_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -146,6 +158,9 @@ CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Vendor_phone_key" ON "Vendor"("phone");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VendorPasswordReset_phone_key" ON "VendorPasswordReset"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "UserOtp_phone_key" ON "UserOtp"("phone");
