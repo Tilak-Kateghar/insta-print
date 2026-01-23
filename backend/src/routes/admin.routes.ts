@@ -1,82 +1,101 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { authGuard } from "../middlewares/authGuard";
+import { asyncHandler } from "../utils/asyncHandler";
+import { AppError } from "../utils/AppError";
 import jwt from "jsonwebtoken";
+import { logger } from "../lib/logger";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "7d";
+
+if (!JWT_SECRET) {
+  throw new AppError("JWT_SECRET not configured", 500, "CONFIG_ERROR");
+}
 
 const router = Router();
 
-router.get("/me", authGuard(["ADMIN"]), async (req, res) => {
-  const admin = await prisma.user.findUnique({
-    where: { id: req.auth!.id },
-    select: {
-      id: true,
-      phone: true,
-      role: true,
-      createdAt: true,
-    },
-  });
+router.get(
+  "/me", 
+  authGuard(["ADMIN"]), 
+  asyncHandler(async (req, res) => {
+    const adminId = req.auth?.id;
+    
+    if (!adminId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
 
-  res.json({ admin });
-});
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: {
+        id: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+      },
+    });
 
-router.post("/login", async (req, res) => {
-  const { phone } = req.body;
+    if (!admin) {
+      throw new AppError("Admin not found", 404, "NOT_FOUND");
+    }
 
-  if (!phone) {
-    return res.status(400).json({ error: "Phone required" });
-  }
+    res.json({ admin });
+  })
+);
 
-  const admin = await prisma.user.findFirst({
-    where: {
-      phone,
-      role: "ADMIN",
-    },
-  });
+router.post(
+  "/login", 
+  asyncHandler(async (req, res) => {
+    const { phone } = req.body;
 
-  if (!admin) {
-    return res.status(401).json({ error: "Admin not found" });
-  }
+    if (!phone || typeof phone !== "string") {
+      throw new AppError("Valid phone number is required", 400, "VALIDATION_ERROR");
+    }
 
-  const token = jwt.sign(
-    { sub: admin.id, role: "ADMIN" },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+    const admin = await prisma.user.findFirst({
+      where: {
+        phone,
+        role: "ADMIN",
+      },
+    });
 
-  res.cookie("access_token", token, {
-    httpOnly: true,
-    sameSite: "strict",
-  });
+    if (!admin) {
+      throw new AppError("Invalid admin credentials", 401, "AUTH_ERROR");
+    }
 
-  res.cookie("role", "ADMIN", {
-    httpOnly: false,
-    sameSite: "strict",
-  });
+    const token = jwt.sign(
+      { sub: admin.id, role: "ADMIN" },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
 
-  res.json({ message: "Admin logged in" });
-});
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+    };
 
-router.post("/logout", async (_req, res) => {
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+    res.cookie("access_token", token, cookieOptions);
+    res.cookie("role", "ADMIN", { ...cookieOptions, httpOnly: false });
 
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    sameSite: "strict",
-  });
+    res.json({ message: "Admin logged in" });
+  })
+);
 
-  res.clearCookie("role", {
-    httpOnly: false,
-    sameSite: "strict",
-  });
+router.post(
+  "/logout", 
+  asyncHandler(async (_req, res) => {
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+    };
 
-  res.json({ message: "Admin logged out" });
-});
+    res.clearCookie("access_token", cookieOptions);
+    res.clearCookie("role", { ...cookieOptions, httpOnly: false });
+
+    res.json({ message: "Admin logged out" });
+  })
+);
 
 export default router;

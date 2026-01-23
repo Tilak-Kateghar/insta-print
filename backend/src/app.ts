@@ -30,13 +30,14 @@ app.use(
   })
 );
 app.use(moderateLimiter);
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use("/vendors", vendorRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/print-jobs", printJobRoutes);
 
+// Global error handler
 app.use((
   err: unknown,
   _req: Request,
@@ -50,10 +51,32 @@ app.use((
     });
   }
 
-  logger.error({ err }, "UNHANDLED_ERROR");
+  // Handle Prisma errors
+  if (err && typeof err === "object" && "code" in err) {
+    const prismaError = err as { code: string; message?: string };
+    if (prismaError.code === "P2002") {
+      return res.status(409).json({
+        error: "A record with this value already exists",
+        code: "DUPLICATE_ENTRY",
+      });
+    }
+    if (prismaError.code === "P2025") {
+      return res.status(404).json({
+        error: "Record not found",
+        code: "NOT_FOUND",
+      });
+    }
+  }
 
+  // Log the error with safe serialization
+  const safeError = err instanceof Error ? { message: err.message, name: err.name, stack: err.stack } : String(err);
+  logger.error({ err: safeError }, "UNHANDLED_ERROR");
+
+  // Don't expose internal errors in production
+  const isProduction = process.env.NODE_ENV === "production";
+  
   return res.status(500).json({
-    error: "Internal server error",
+    error: isProduction ? "Internal server error" : (err instanceof Error ? err.message : "Unknown error"),
   });
 });
 
@@ -62,26 +85,43 @@ app.get("/health", async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({ status: "ok", db: "connected" });
   } catch (err) {
+    logger.error({ err }, "HEALTH_CHECK_FAILED");
     res.status(500).json({ status: "error", db: "disconnected" });
   }
 });
 
-app.get("/user/me", authGuard(["USER"]), async (req, res) => {
-  console.log("AUTH:", req.auth);
+app.get("/user/me", authGuard(["USER"]), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.auth?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.auth!.id },
-  });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-  console.log("USER:", user);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
 
-  res.json({ user });
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
 });
 
 
-app.get("/vendor/me", moderateLimiter, authGuard(["VENDOR"]), (req, res) => {
-  const vendor = req.auth!.id;
-  res.json({ vendor });
+app.get("/vendor/me", moderateLimiter, authGuard(["VENDOR"]), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    res.json({ vendor: vendorId });
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default app;

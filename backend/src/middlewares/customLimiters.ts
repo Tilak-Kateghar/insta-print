@@ -14,9 +14,18 @@ export const otpSendLimiter = rateLimit({
     safeKey(req.body?.phone, "otp-send"),
 
   handler: (_req, res) => {
-    res.status(429).json({
-      error: "Too many OTP requests. Try later.",
-    });
+    try {
+      res.status(429).json({
+        error: "Too many OTP requests. Try later.",
+        state: "rate_limited",
+      });
+    } catch (error) {
+      console.error("Error in otpSendLimiter handler:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        state: "error",
+      });
+    }
   },
 });
 
@@ -32,6 +41,7 @@ export const otpVerifyLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many OTP attempts.",
+      state: "rate_limited",
     });
   },
 });
@@ -46,6 +56,7 @@ export const uploadLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Upload limit exceeded.",
+      state: "rate_limited",
     });
   },
 });
@@ -60,6 +71,7 @@ export const pricingLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many pricing attempts.",
+      state: "rate_limited",
     });
   },
 });
@@ -74,6 +86,7 @@ export const paymentLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many payment attempts.",
+      state: "rate_limited",
     });
   },
 });
@@ -88,6 +101,7 @@ export const pickupLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many pickup attempts.",
+      state: "rate_limited",
     });
   },
 });
@@ -104,6 +118,7 @@ export const vendorForgotOtpSendLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many reset attempts. Try again later.",
+      state: "rate_limited",
     });
   },
 });
@@ -120,6 +135,7 @@ export const vendorForgotOtpVerifyLimiter = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many OTP attempts. Please retry later.",
+      state: "rate_limited",
     });
   },
 });

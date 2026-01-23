@@ -26,7 +26,10 @@ router.post(
   upload.single("file"),
   uploadLimiter,
   asyncHandler(async (req, res) => {
-    const userId = req.auth!.id;
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
 
     if (!req.file) {
       return res.status(400).json({ error: "File is required" });
@@ -114,12 +117,17 @@ router.get(
   "/my",
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: userId }
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("User not found", 404, "NOT_FOUND");
     }
 
     const jobs = await prisma.printJob.findMany({
@@ -191,17 +199,22 @@ router.get(
   "/vendor/my",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const jobs = await prisma.printJob.findMany({
       where: {
-        vendorId: req.auth!.id,
+        vendorId: vendorId,
       },
       orderBy: {
         createdAt: "desc",
@@ -229,12 +242,17 @@ router.get(
   "/vendor/earnings",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const earnings = await prisma.vendorEarning.findMany({
@@ -259,7 +277,10 @@ router.post(
   "/vendor/settle",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
-    const vendorId = req.auth!.id;
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
 
     const unsettled = await prisma.vendorEarning.findMany({
       where: {
@@ -312,6 +333,11 @@ router.get(
   "/vendor/:id",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const jobId = String(req.params.id);
 
     const job = await prisma.printJob.findUnique({
@@ -324,8 +350,8 @@ router.get(
       },
     });
 
-    if (!job || job.vendorId !== req.auth!.id) {
-      return res.status(404).json({ error: "Job not found" });
+    if (!job || job.vendorId !== vendorId) {
+      throw new AppError("Job not found", 404, "NOT_FOUND");
     }
 
     return res.json({ job });
@@ -355,16 +381,21 @@ router.get(
   "/vendor/earnings/summary",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const earnings = await prisma.vendorEarning.findMany({
-      where: { vendorId: req.auth!.id },
+      where: { vendorId: vendorId },
       select: {
         grossAmount: true,
         platformFee: true,
@@ -407,23 +438,28 @@ router.patch(
   "/:id/status",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
     const { status } = req.body as { status: PrintJobStatus };
 
     if (!Object.values(PrintJobStatus).includes(status)) {
-      return res.status(400).json({ error: "Invalid status value" });
+      throw new AppError("Invalid status value", 400, "VALIDATION_ERROR");
     }
 
     if (status !== PrintJobStatus.READY) {
-      return res.status(400).json({ error: "Invalid status value" });
+      throw new AppError("Invalid status value", 400, "VALIDATION_ERROR");
     }
 
     const nextStatus: PrintJobStatus = PrintJobStatus.READY;
@@ -436,8 +472,8 @@ router.patch(
       },
     });
 
-    if (!job || job.vendorId !== req.auth!.id) {
-      return res.status(404).json({ error: "Print job not found" });
+    if (!job || job.vendorId !== vendorId) {
+      throw new AppError("Print job not found", 404, "NOT_FOUND");
     }
 
     if (job.price === null) {
@@ -511,12 +547,17 @@ router.post(
   pickupLimiter,
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
@@ -600,19 +641,24 @@ router.post(
   asyncHandler(async (req, res) => {
     logger.info("🔥 VERIFY PICKUP ROUTE HIT");
 
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
     const { otp } = req.body;
 
     if (typeof jobId !== "string" || typeof otp !== "string") {
-      return res.status(400).json({ error: "Invalid request" });
+      throw new AppError("Invalid request", 400, "VALIDATION_ERROR");
     }
 
     const job = await prisma.printJob.findUnique({
@@ -623,8 +669,8 @@ router.post(
       },
     });
 
-    if (!job || job.vendorId !== req.auth!.id) {
-      return res.status(404).json({ error: "Print job not found" });
+    if (!job || job.vendorId !== vendorId) {
+      throw new AppError("Print job not found", 404, "NOT_FOUND");
     }
 
     const payment = job.payment;
@@ -722,7 +768,7 @@ router.post(
     const jobId = req.params.id;
     const price = Number(req.body.price);
 
-    if (!price || price <= 0) {
+    if (!price || price < 0) {
       throw new AppError("Invalid price", 400);
     }
 
@@ -732,24 +778,6 @@ router.post(
 
     if (!job || job.vendorId !== req.auth!.id) {
       throw new AppError("Unauthorized", 403);
-    }
-
-    let rate = 0;
-    if (job.colorMode === "BLACK_WHITE") {
-      rate = job.paperSize === "A3" ? 5 : 2;
-    } else {
-      rate = job.paperSize === "A3" ? 10 : 5;
-    }
-
-    const base = job.copies * rate;
-    const min = base;
-    const max = base * 2;
-
-    if (price < min || price > max) {
-      throw new AppError(
-        `Price must be between ₹${min} and ₹${max}`,
-        400
-      );
     }
 
     const updated = await prisma.printJob.update({
@@ -765,12 +793,17 @@ router.post(
   "/:id/accept-price",
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: userId }
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("User not found", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
@@ -818,12 +851,17 @@ router.post(
   paymentLimiter,
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: userId }
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("User not found", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
@@ -850,7 +888,7 @@ router.post(
         },
       });
 
-      if (!job || job.userId !== user.id) {
+      if (!job || job.userId !== userId) {
         throw new AppError("Job not found", 404);
       }
 
@@ -903,6 +941,11 @@ router.post(
   "/:id/mock-pay-success",
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const jobId = req.params.id;
 
     const job = await prisma.printJob.findUnique({
@@ -910,7 +953,7 @@ router.post(
       include: { payment: true },
     });
 
-    if (!job || job.userId !== req.auth!.id) {
+    if (!job || job.userId !== userId) {
       throw new AppError("Unauthorized", 403);
     }
 
@@ -963,12 +1006,17 @@ router.post(
   strictLimiter,
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const vendor = await prisma.vendor.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: vendorId }
     });
 
     if (!vendor || !vendor.isActive) {
-      return res.status(400).json({ error: "Invalid vendor" });
+      throw new AppError("Vendor not found or inactive", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
@@ -1022,12 +1070,17 @@ router.post(
   strictLimiter,
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: req.auth!.id }
+      where: { id: userId }
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("User not found", 404, "NOT_FOUND");
     }
 
     const jobId = String(req.params.id);
@@ -1312,7 +1365,10 @@ router.post(
   "/vendor/settle",
   authGuard(["VENDOR"]),
   asyncHandler(async (req, res) => {
-    const vendorId = req.auth!.id;
+    const vendorId = req.auth?.id;
+    if (!vendorId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
 
     const unsettled = await prisma.vendorEarning.findMany({
       where: {
@@ -1322,9 +1378,7 @@ router.post(
     });
 
     if (unsettled.length === 0) {
-      return res.status(400).json({
-        error: "No earnings to settle",
-      });
+      throw new AppError("No earnings to settle", 400, "NO_EARNINGS");
     }
 
     const settlementRef = `VENDOR_SETTLE_${Date.now()}`;

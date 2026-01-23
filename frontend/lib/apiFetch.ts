@@ -5,22 +5,36 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<T> {
   const isFormData = options.body instanceof FormData;
-  
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    headers: isFormData 
-      ? {} 
-      : {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
-    ...options,
-  });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `HTTP ${res.status}: Request failed`);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
+      headers: isFormData
+        ? {}
+        : {
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+      ...options,
+    });
+
+    if (!res.ok) {
+      let errorMessage = `HTTP ${res.status}: Request failed`;
+      try {
+        const data = await res.json();
+        errorMessage = data.error || data.message || errorMessage;
+      } catch (parseError) {
+        // If JSON parsing fails, use default error message
+        console.warn('Failed to parse error response as JSON:', parseError);
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Network error or unexpected failure');
   }
-
-  return res.json();
 }

@@ -6,10 +6,16 @@ import { otpSendLimiter, otpVerifyLimiter } from "../middlewares/customLimiters"
 import { AppError } from "../utils/AppError";
 import jwt from "jsonwebtoken";
 import { generateOtp, hashOtp } from "../utils/otp";
+import { logger } from "../lib/logger";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET!;
+
+const JWT_SECRET = process.env.JWT_SECRET;
 const isDev = process.env.NODE_ENV !== "production";
+
+if (!JWT_SECRET) {
+  throw new AppError("JWT_SECRET not configured", 500, "CONFIG_ERROR");
+}
 
 router.post(
   "/send-otp",
@@ -18,7 +24,7 @@ router.post(
     const { phone } = req.body;
 
     if (typeof phone !== "string" || phone.trim().length < 10) {
-      throw new AppError("Invalid phone number", 400);
+      throw new AppError("Invalid phone number. Please enter a valid 10-digit phone number.", 400, "VALIDATION_ERROR");
     }
 
     const otp = generateOtp();
@@ -32,10 +38,10 @@ router.post(
     });
 
     if (isDev) {
+      logger.debug({ phone }, "USER_OTP_GENERATED");
+      // eslint-disable-next-line no-console
       console.log(`\n🔐 DEV OTP for ${phone}: ${otp}\n`);
     }
-
-    console.log(`${otp}`);
 
     return res.status(200).json({
       message: "OTP generated",
@@ -50,22 +56,32 @@ router.post(
   asyncHandler(async (req, res) => {
     const { phone, otp } = req.body;
 
-    console.log(`${otp}`);
-
     if (!phone || !otp) {
-      throw new AppError("Phone and OTP required", 400);
+      throw new AppError("Phone and OTP are required", 400, "VALIDATION_ERROR");
+    }
+
+    if (isDev) {
+      // eslint-disable-next-line no-console
+      console.log(`OTP verification attempt: ${otp}`);
+    }
+
+    if (typeof phone !== "string" || typeof otp !== "string") {
+      throw new AppError("Invalid input format", 400, "VALIDATION_ERROR");
     }
 
     const record = await prisma.userOtp.findUnique({ where: { phone } });
 
-    if (!record) throw new AppError("OTP not found", 400);
+    if (!record) {
+      throw new AppError("OTP not found or expired. Please request a new OTP.", 400, "OTP_NOT_FOUND");
+    }
+    
     if (record.expiresAt < new Date()) {
-      await prisma.userOtp.delete({ where: { phone } });
-      throw new AppError("OTP expired", 400);
+      await prisma.userOtp.delete({ where: { phone } }).catch(() => {});
+      throw new AppError("OTP has expired. Please request a new OTP.", 400, "OTP_EXPIRED");
     }
 
     if (hashOtp(phone, otp) !== record.otpHash) {
-      throw new AppError("Invalid OTP", 400);
+      throw new AppError("Invalid OTP. Please try again.", 400, "INVALID_OTP");
     }
 
     let user = await prisma.user.findUnique({ where: { phone } });
@@ -81,7 +97,7 @@ router.post(
       });
     }
 
-    await prisma.userOtp.delete({ where: { phone } });
+    await prisma.userOtp.delete({ where: { phone } }).catch(() => {});
 
     const token = jwt.sign(
       { sub: user.id, role: "USER" },
@@ -89,17 +105,14 @@ router.post(
       { expiresIn: "7d" }
     );
 
-    res.cookie("access_token", token, {
+    const cookieOptions = {
       httpOnly: true,
       secure: !isDev,
-      sameSite: isDev ? "lax" : "strict",
-    });
+      sameSite: (isDev ? "lax" : "strict") as "strict" | "lax",
+    };
 
-    res.cookie("role", "USER", {
-      httpOnly: false,
-      secure: !isDev,
-      sameSite: isDev ? "lax" : "strict",
-    });
+    res.cookie("access_token", token, cookieOptions);
+    res.cookie("role", "USER", { ...cookieOptions, httpOnly: false });
 
     return res.json({
       message: "OTP verified",
@@ -112,14 +125,20 @@ router.get(
   "/me/dashboard",
   authGuard(["USER"]),
   asyncHandler(async (req, res) => {
-    const userId = req.auth!.id;
+    const userId = req.auth?.id;
+    
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "AUTH_ERROR");
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, phone: true, createdAt: true },
     });
 
-    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (!user) {
+      throw new AppError("User not found", 404, "NOT_FOUND");
+    }
 
     const jobs = await prisma.printJob.findMany({
       where: { userId },
@@ -153,14 +172,14 @@ router.post(
     const cookieOptions = {
       httpOnly: true,
       secure: !isDev,
-      sameSite: isDev ? "lax" : "strict",
+      sameSite: isDev ? "lax" : "strict" as const,
     } as const;
 
     res.clearCookie("access_token", cookieOptions);
     res.clearCookie("role", {
       httpOnly: false,
       secure: !isDev,
-      sameSite: isDev ? "lax" : "strict",
+      sameSite: (isDev ? "lax" : "strict") as "lax" | "strict",
     });
 
     return res.status(200).json({ message: "Logged out" });

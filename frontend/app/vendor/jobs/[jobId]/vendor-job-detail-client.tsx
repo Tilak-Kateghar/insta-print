@@ -71,16 +71,20 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
 
   async function submitPrice() {
     if (price === null) return;
-    await apiFetch(`/print-jobs/${jobId}/set-price`, {
-      method: "POST",
-      body: JSON.stringify({ price }),
-    });
-    await loadJob();
+    try {
+      await apiFetch(`/print-jobs/${jobId}/set-price`, {
+        method: "POST",
+        body: JSON.stringify({ price }),
+      });
+      await loadJob();
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   async function verifyPickupOtp() {
     if (!pickupOtp || pickupOtp.length !== 6) {
-      alert("Enter valid 6-digit OTP");
+      setError("Enter valid 6-digit OTP");
       return;
     }
 
@@ -92,6 +96,7 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
         body: JSON.stringify({ otp: pickupOtp }),
       });
 
+      setError(null);
       alert("Pickup verified. Job completed.");
 
       const refreshed = await apiFetch<{ job: Job }>(
@@ -99,31 +104,39 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
       );
       setJob(refreshed.job);
     } catch (err: any) {
-      alert(err.message);
+      setError(err.message);
     } finally {
       setVerifying(false);
     }
   }
 
   async function markReady() {
-    await apiFetch(`/print-jobs/${jobId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "READY" }),
-    });
-    await loadJob();
+    try {
+      await apiFetch(`/print-jobs/${jobId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "READY" }),
+      });
+      await loadJob();
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   async function generateOtp() {
-    const res = await apiFetch<{ otp?: string }>(
-      `/print-jobs/${jobId}/pickup-otp`,
-      { method: "POST" }
-    );
+    try {
+      const res = await apiFetch<{ otp?: string }>(
+        `/print-jobs/${jobId}/pickup-otp`,
+        { method: "POST" }
+      );
 
-    if (res.otp) {
-      setDevOtp(res.otp);
-      alert(`DEV PICKUP OTP: ${res.otp}`);
+      if (res.otp) {
+        setDevOtp(res.otp);
+        alert(`DEV PICKUP OTP: ${res.otp}`);
+      }
+      await loadJob();
+    } catch (err: any) {
+      setError(err.message);
     }
-    await loadJob();
   }
 
   async function downloadFile() {
@@ -134,7 +147,7 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
 
       window.open(res.downloadUrl, "_blank");
     } catch (err: any) {
-      alert(err.message);
+      setError(err.message);
     }
   }
 
@@ -188,6 +201,9 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
   }
 
   if (!job) return null;
+
+  // Clear error when user interacts
+  const handleInteraction = () => setError(null);
 
   const pricing = calculatePrice(job.copies, job.colorMode, job.paperSize);
 
@@ -256,6 +272,11 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          {error && (
+            <Alert variant="error" title="Error">
+              <p className="text-charcoal-700">{error}</p>
+            </Alert>
+          )}
 
       <Card>
         <CardHeader>
@@ -399,7 +420,7 @@ export default function VendorJobDetailClient({ jobId }: { jobId: string }) {
                 className="w-full"
                 icon={<Key className="w-4 h-4" />}
               >
-                Generate Pickup OTP (Dev)
+                Generate Pickup OTP
               </Button>
             )}
 

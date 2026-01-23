@@ -91,16 +91,26 @@ export default function UserJobDetailClient() {
   async function acceptPrice() {
     if (!job) return;
 
-    await apiFetch(`/print-jobs/${job.id}/accept-price`, { method: "POST" });
-    setJob({ ...job, priceAccepted: true });
+    try {
+      await apiFetch(`/print-jobs/${job.id}/accept-price`, { method: "POST" });
+      setJob({ ...job, priceAccepted: true });
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   async function cancelJob() {
     if (!job) return;
 
-    await apiFetch(`/print-jobs/${job.id}/cancel`, { method: "POST" });
-    const refreshed = await apiFetch<{ job: Job }>(`/print-jobs/${job.id}`);
-    setJob(refreshed.job);
+    try {
+      await apiFetch(`/print-jobs/${job.id}/cancel`, { method: "POST" });
+      const refreshed = await apiFetch<{ job: Job }>(`/print-jobs/${job.id}`);
+      setJob(refreshed.job);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   async function payOnline() {
@@ -108,6 +118,7 @@ export default function UserJobDetailClient() {
 
     try {
       setPaying(true);
+      setError(null);
 
       await apiFetch(`/print-jobs/${job.id}/pay`, {
         method: "POST",
@@ -123,6 +134,8 @@ export default function UserJobDetailClient() {
 
       const refreshed = await apiFetch<{ job: Job }>(`/print-jobs/${job.id}`);
       setJob(refreshed.job);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setPaying(false);
     }
@@ -133,6 +146,7 @@ export default function UserJobDetailClient() {
 
     try {
       setPayingOffline(true);
+      setError(null);
 
       await apiFetch(`/print-jobs/${job.id}/pay`, {
         method: "POST",
@@ -148,6 +162,8 @@ export default function UserJobDetailClient() {
 
       const refreshed = await apiFetch<{ job: Job }>(`/print-jobs/${job.id}`);
       setJob(refreshed.job);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setPayingOffline(false);
     }

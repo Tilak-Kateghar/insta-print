@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
 import {
@@ -32,6 +32,7 @@ type Vendor = {
 
 export default function CreateJobClient() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -224,6 +225,7 @@ export default function CreateJobClient() {
                       onChange={handleFileChange}
                       className="hidden"
                       id="file-upload"
+                      ref={fileInputRef}
                     />
 
                     {file ? (
