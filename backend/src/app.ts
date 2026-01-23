@@ -14,6 +14,7 @@ import { logger } from "./lib/logger";
 import type { Request, Response, NextFunction } from "express";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(requestLogger);
 
 const allowedOrigins = [
@@ -31,7 +32,17 @@ app.use(
   })
 );
 
-app.use(moderateLimiter);
+app.use((req, res, next) => {
+  if (
+    req.method === "OPTIONS" ||
+    req.path.startsWith("/users/send-otp") ||
+    req.path.startsWith("/users/login") ||
+    req.path.startsWith("/vendors/login")
+  ) {
+    return next();
+  }
+  return moderateLimiter(req, res, next);
+});
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use("/vendors", vendorRoutes);
