@@ -104,14 +104,17 @@ router.post(
 
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none" as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
     res.cookie("access_token", token, cookieOptions);
     res.cookie("role", "VENDOR", { ...cookieOptions, httpOnly: false });
 
-    res.json({
+    return res.status(200).json({
+      success: true,
+      role: "VENDOR",
       message: "Login successful",
       vendor: {
         id: vendor.id,

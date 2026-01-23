@@ -61,7 +61,6 @@ router.post(
     }
 
     if (isDev) {
-      // eslint-disable-next-line no-console
       console.log(`OTP verification attempt: ${otp}`);
     }
 
@@ -107,14 +106,17 @@ router.post(
 
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none" as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
     res.cookie("access_token", token, cookieOptions);
     res.cookie("role", "USER", { ...cookieOptions, httpOnly: false });
 
-    return res.json({
+    return res.status(200).json({
+      success: true,
+      role: "USER",
       message: "OTP verified",
       user: { id: user.id, phone: user.phone },
     });
