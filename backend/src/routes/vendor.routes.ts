@@ -115,6 +115,8 @@ router.post(
         id: vendor.id,
         shopName: vendor.shopName,
         phone: vendor.phone,
+        success: true,
+        role: "VENDOR",
       },
     });
   })
@@ -260,7 +262,7 @@ router.post(
     const options = getAuthCookieOptions();
     res.clearCookie("access_token", options);
     res.clearCookie("role", { ...options, httpOnly: false });
-    res.json({ message: "Logged out" });
+    res.json({ message: "Logged out", success: true });
   })
 );
 

@@ -114,6 +114,8 @@ router.post(
     return res.json({
       message: "OTP verified",
       user: { id: user.id, phone: user.phone },
+      success: true,
+      role: "USER",
     });
   })
 );
@@ -174,11 +176,12 @@ router.get(
 router.post(
   "/logout",
   asyncHandler(async (_req: Request, res: Response) => {
-    const options = getAuthCookieOptions();
-    res.clearCookie("access_token", options);
-    res.clearCookie("role", { ...options, httpOnly: false });
+    const opts = getAuthCookieOptions();
+    
+    res.clearCookie("access_token", opts);
+    res.clearCookie("role", { ...opts, httpOnly: false });
 
-    return res.status(200).json({ message: "Logged out" });
+    return res.json({ success: true, message: "Logged out" });
   })
 );
 

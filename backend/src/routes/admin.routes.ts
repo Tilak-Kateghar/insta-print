@@ -4,6 +4,7 @@ import { authGuard } from "../middlewares/authGuard";
 import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/AppError";
 import jwt from "jsonwebtoken";
+import { getAuthCookieOptions } from "../utils/cookies";
 import { logger } from "../lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -75,10 +76,13 @@ router.post(
       sameSite: "strict" as const,
     };
 
-    res.cookie("access_token", token, cookieOptions);
-    res.cookie("role", "ADMIN", { ...cookieOptions, httpOnly: false });
+    res.cookie("access_token", token, getAuthCookieOptions());
+    res.cookie("role", "ADMIN", {
+      ...getAuthCookieOptions(),
+      httpOnly: false,
+    });
 
-    res.json({ message: "Admin logged in" });
+    return res.json({ success: true });
   })
 );
 
@@ -91,10 +95,11 @@ router.post(
       sameSite: "strict" as const,
     };
 
-    res.clearCookie("access_token", cookieOptions);
-    res.clearCookie("role", { ...cookieOptions, httpOnly: false });
+    const opts = getAuthCookieOptions();
+    res.clearCookie("access_token", opts);
+    res.clearCookie("role", { ...opts, httpOnly: false });
 
-    res.json({ message: "Admin logged out" });
+    return res.json({ success: true });
   })
 );
 

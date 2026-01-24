@@ -17,24 +17,34 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(requestLogger);
 
+// const allowedOrigins = [
+//   "http://localhost:3000",
+//   "https://insta-print.onrender.com",
+//   "https://insta-print-backend.onrender.com"
+// ];
+
+// app.use(
+//   cors({
+//     origin: true,          // 🔥 reflect request origin
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   })
+// );
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://insta-print.onrender.com",
-  "https://insta-print-backend.onrender.com"
 ];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(null, false); // IMPORTANT: no Error()
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(null, false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
