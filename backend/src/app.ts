@@ -19,7 +19,8 @@ app.use(requestLogger);
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://insta-print.onrender.com"
+  "https://insta-print.onrender.com",
+  "https://insta-print-backend.onrender.com"
 ];
 
 app.use(
