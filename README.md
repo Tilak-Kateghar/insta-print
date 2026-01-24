@@ -4,8 +4,8 @@ InstaPrint is a simple web application that demonstrates how a real world printi
 
 This project focuses on **authentication, role based access, dashboards, and secure workflows**, presented in a clean and beginner friendly way so that anyone can try it out easily.
 
-> 🔗 Live Application:  
-> **https://insta-print.onrender.com/**
+> 🔗 **Live Application:**  
+> https://insta-print.onrender.com/
 
 ---
 
@@ -14,7 +14,7 @@ This project focuses on **authentication, role based access, dashboards, and sec
 InstaPrint lets two types of people use the same system:
 
 - **Users** → People who want to get prints hazzle free by skipping the long waiting queue's and save time.
-- **Vendors** → Print shop owners who manage incoming jobs, convert, show case their business online for their growth's and solve the major problem's which are faced by the respective target audience and get their reach. 
+- **Vendors** → Print shop owners who manage incoming jobs, convert, show case their business online for their growth's and solve the major problem's which are faced by the respective target audience and get their reach.
 
 Both roles log in differently, see different dashboards, and cannot interfere with each other because of the strictly implementation of the cookies concept.
 
@@ -34,22 +34,20 @@ A ready to use vendor account is already created so you can explore the vendor d
 
 ### Vendor Login Details
 
-- **Phone Number:** `9898989898`
-- **Password:** `@StrongPass123`
-- **Shop Name:** `B.Tech Print Wala`
-- **Owner Name:** `Brad Pitt`
+| Field | Value |
+|-------|-------|
+| **Phone Number** | `9898989898` |
+| **Password** | `@StrongPass123` |
+| **Shop Name** | `B.Tech Print Wala` |
+| **Owner Name** | `Brad Pitt` |
 
-⚠️ **Do not change the password for this phone number** as this account is shared for demo purposes for trailing purpose for the people like you.
+> ⚠️ **Do not change the password for this phone number** as this account is shared for demo purposes for trailing purpose for the people like you.
 
 ### Steps
 
-1. Open the live Website -
- https://insta-print.onrender.com/login/vendor
-
+1. Open the live Website - https://insta-print.onrender.com/login/vendor
 2. Enter the credentials above
-
 3. Click **Sign In**
-
 4. You will be redirected to the **Vendor Dashboard**
 
 From here, you can:
@@ -61,31 +59,31 @@ From here, you can:
 
 Once you log in as a vendor, You can fully simulate how a real print shop would operate using InstaPrint.
 
-## Here’s the recommended flow to try everything properly:
+#### Here's the recommended flow to try everything properly:
 
-1. Go to the Vendor Dashboard. After login, you’ll land on the vendor dashboard where you can see an overview of your activity. Forgot your password? No worries as you have an option of resetting your password through the forgot-password page.
+1. **Go to the Vendor Dashboard.** After login, you'll land on the vendor dashboard where you can see an overview of your activity. Forgot your password? No worries as you have an option of resetting your password through the forgot-password page.
 
-2. Open the “Jobs” section. Navigate to Vendor Jobs to view all incoming print requests from users. Any new request will appear as a pending job.
+2. **Open the "Jobs" section.** Navigate to Vendor Jobs to view all incoming print requests from users. Any new request will appear as a pending job.
 
-3. Review a Pending Job.
+3. **Review a Pending Job.**
 
-4. Click on a pending job to open its details.
+4. **Click on a pending job** to open its details.
 
-5. Set the Price for the Job by Entering the price you want to charge for that print job, Then proceed with Submitting the final price to the customer.
+5. **Set the Price for the Job** by Entering the price you want to charge for that print job, Then proceed with Submitting the final price to the customer.
 
-6. The job will now wait for the user’s price acceptance, Wait for User Acceptance. Once the user accepts the price and completes payment, The job status will update automatically. Only after this step should printing begin.
+6. **Wait for User Acceptance.** Once the user accepts the price and completes payment, The job status will update automatically. Only after this step should printing begin.
 
-7. Check the uploaded document and job requirements, Download the File for Printing by Clicking the Download File button provided in the job which is a secure link which doesn't leak your documents. Print the file using your printing machine as usual then Mark the Job as Ready.
+7. **Download the File for Printing** by Clicking the Download File button provided in the job which is a secure link which doesn't leak your documents. Print the file using your printing machine as usual then Mark the Job as Ready.
 
-8. This indicates that the order can now be collected by the user via OTP Based Pickup Verification
+8. This indicates that the order can now be collected by the user via OTP Based Pickup Verification.
 
-9. The user will receive a pickup OTP
+9. The user will receive a pickup OTP.
 
-10. Verify the OTP when the customer arrives
+10. **Verify the OTP** when the customer arrives.
 
-11. This ensures the print is handed over to the correct person
+11. This ensures the print is handed over to the correct person.
 
-12. Settle Earnings by Visiting the Settle / Earnings page. View unsettled amounts, Settle completed jobs to track finalized earnings
+12. **Settle Earnings** by Visiting the Settle / Earnings page. View unsettled amounts, Settle completed jobs to track finalized earnings.
 
 This flow mirrors how a real print shop would handle orders from receiving a job to final handover but in a fully digital and organized way.
 
@@ -97,17 +95,12 @@ User login works using a phone number and OTP (One Time Password).
 
 ### Steps
 
-1. Open the live Website -
- https://insta-print.onrender.com/login/user
-
+1. Open the live Website - https://insta-print.onrender.com/login/user
 2. Enter **any valid 10 digit phone number**
-
 3. Click **Send OTP**
-
 4. Since this is a demo environment:
    - The OTP will **appear on the screen**
    - Click **Copy & Fill** to auto enter it
-
 5. Click **Verify OTP**
 
 You will now be logged in as a user and redirected to the user dashboard.
@@ -116,31 +109,29 @@ You will now be logged in as a user and redirected to the user dashboard.
 
 Once you access InstaPrint as a user, you can experience how document printing works end-to-end from uploading a file to collecting the printed document without any confusion.
 
-## Here’s the recommended flow to try everything properly:
+#### Here's the recommended flow to try everything properly:
 
-1. Go to the User Login Page. Open the live site
- and navigate to the user login page. Enter your phone number and proceed with OTP based login. The OTP will be shown on the screen wherever applicable.
+1. **Go to the User Login Page.** Open the live site and navigate to the user login page. Enter your phone number and proceed with OTP based login. The OTP will be shown on the screen wherever applicable.
 
-2. Verify OTP and Access the Dashboard. Enter the 6 digit OTP to verify your identity. After successful verification, you’ll be redirected to the User Dashboard where you can see your activity and job history.
+2. **Verify OTP and Access the Dashboard.** Enter the 6 digit OTP to verify your identity. After successful verification, you'll be redirected to the User Dashboard where you can see your activity and job history.
 
-3. Create a New Print Job. Navigate to the Create New Job or New Print Job section from the dashboard. Upload the document you want to print using the provided upload option.
+3. **Create a New Print Job.** Navigate to the Create New Job or New Print Job section from the dashboard. Upload the document you want to print using the provided upload option.
 
-4. Submit Print Requirements. Provide the necessary details such as number of copies and any additional instructions related to the print job. Submit the job request to make it visible to vendors.
+4. **Submit Print Requirements.** Provide the necessary details such as number of copies and any additional instructions related to the print job. Submit the job request to make it visible to vendors.
 
-5. Wait for Vendor Price Quotation. Once a vendor reviews your job, they will set a price for the print request. The job will remain in a pending state until a price is quoted.
+5. **Wait for Vendor Price Quotation.** Once a vendor reviews your job, they will set a price for the print request. The job will remain in a pending state until a price is quoted.
 
-6. Review and Accept the Price. When the vendor sets a price, you will be notified on your dashboard. Review the quoted price carefully and proceed with accepting it if you are satisfied.
+6. **Review and Accept the Price.** When the vendor sets a price, you will be notified on your dashboard. Review the quoted price carefully and proceed with accepting it if you are satisfied.
 
-7. Complete Payment. After accepting the price, complete the payment as prompted. Once payment is successful, the job status updates automatically.
+7. **Complete Payment.** After accepting the price, complete the payment as prompted. Once payment is successful, the job status updates automatically.
 
-8. After payment, the vendor will download the document and start printing it. You don’t need to take any action during this step.
+8. After payment, the vendor will download the document and start printing it. You don't need to take any action during this step.
 
-9. Receive Pickup OTP. Once the vendor marks the job as Ready, a pickup OTP will be generated for your order. This OTP is required to securely collect your printed documents.
+9. **Receive Pickup OTP.** Once the vendor marks the job as Ready, a pickup OTP will be generated for your order. This OTP is required to securely collect your printed documents.
 
-10. Collect Your Prints Using OTP Verification. Visit the vendor and provide the pickup OTP. The vendor verifies the OTP to ensure the prints are handed over to the correct person.
+10. **Collect Your Prints Using OTP Verification.** Visit the vendor and provide the pickup OTP. The vendor verifies the OTP to ensure the prints are handed over to the correct person.
 
-11. After OTP verification, the job is marked as Completed.
-You can view the completed job details and history from your dashboard.
+11. After OTP verification, the job is marked as Completed. You can view the completed job details and history from your dashboard.
 
 This flow demonstrates how a user can move from uploading a document to securely collecting printed output all through a smooth, guided, and digital experience.
 
@@ -154,30 +145,21 @@ Please read this carefully to avoid confusion.
 
 User and Vendor sessions are **completely separate**.
 
-Choose ONE of the following:
+Choose **ONE** of the following:
 
-- Use **two different browsers**  
-  (Example: Chrome for User, Firefox for Vendor)
-
-(OR)
-
+- Use **two different browsers** (Example: Chrome for User, Firefox for Vendor)
 - Use **Incognito / Private window** for one role
 
-If you ignore this, authentication may break due to cookie conflicts.
-
----
+> If you ignore this, authentication may break due to cookie conflicts.
 
 ### 2. Do NOT refresh randomly during login
 
 - Wait for redirects to complete
 - Let the page navigate automatically after login
 
----
-
 ### 3. OTP visibility is intentional
 
-OTP appearing on screen is **expected behavior** in this demo.
-This is done so reviewers can test the system **without SMS integration**.
+OTP appearing on screen is **expected behavior** in this demo. This is done so reviewers can test the system **without SMS integration**.
 
 ---
 
@@ -198,6 +180,7 @@ This project is meant to show **how things work internally**, not just how they 
 ## Tech Stack used in this Project
 
 ### Frontend
+
 - Next.js 14
 - TypeScript
 - Tailwind CSS
@@ -205,6 +188,7 @@ This project is meant to show **how things work internally**, not just how they 
 - Cookie based authentication
 
 ### Backend
+
 - Node.js
 - Express
 - TypeScript
@@ -213,14 +197,15 @@ This project is meant to show **how things work internally**, not just how they 
 - Rate limiting & security middleware
 
 ### Database
+
 - SQLite (development)
 - PostgreSQL (production)
 
 ---
 
-## Project Structure 
+## Project Structure
 
-```text
+```
 insta-print/
 ├── .gitignore
 ├── .node-version
@@ -361,6 +346,7 @@ insta-print/
             ├── .npmrc
             ├── deno.json
             └── index.ts
+```
 
 ---
 
@@ -376,64 +362,49 @@ If you are reviewing this project, try:
 
 ---
 
-### Project Scope & Version Roadmap (v1)
+## Project Scope & Version Roadmap (v1)
 
-## The current live deployment of InstaPrint represents Version 1 (v1) of the platform.
+The current live deployment of InstaPrint represents **Version 1 (v1)** of the platform.
 
 This version is intentionally designed to prove the core idea end-to-end focusing on authentication, job flow, vendor and user interaction, and operational correctness before expanding into advanced features.
 
-## What Version 1 Focuses On?
+### What Version 1 Focuses On?
 
 Version 1 prioritizes the fundamental workflow of a real print shop, including:
 
 - OTP based authentication for users and vendors
-
 - Clear separation of user, vendor, and admin roles
-
 - Secure document upload and access
-
 - Vendor driven pricing and job management
-
 - User price acceptance flow
-
 - OTP based pickup verification
-
 - Earnings tracking and settlement visibility
 
 These features together demonstrate the complete lifecycle of a print job, from request creation to final handover.
 
-## Features Planned for Future Versions
+### Features Planned for Future Versions
 
 Some capabilities are intentionally deferred to future versions to keep the initial release stable, understandable, and easy to evaluate.
 
-# These include:
+These include:
 
-- Online payment gateway integrations (planned with Razorpay / Stripe / UPI support)
+- **Online payment gateway integrations** (planned with Razorpay / Stripe / UPI support)
+- **Delivery and logistics workflows** (currently designed for in-person pickup using OTP verification)
+- **Location based vendor discovery** (distance, maps, and geo-filtering)
+- **Automated vendor payouts and settlements** (currently tracked logically, with manual settlement simulation)
+- **Production grade SMS and notification providers** (OTP is surfaced on screen in development for transparency and testing)
 
-- Delivery and logistics workflows (currently designed for in-person pickup using OTP verification)
+### Why This Approach Was Chosen?
 
-- Location based vendor discovery (distance, maps, and geo-filtering)
-
-- Automated vendor payouts and settlements (currently tracked logically, with manual settlement simulation)
-
-- Production grade SMS and notification providers
-(OTP is surfaced on screen in development for transparency and testing)
-
-## Why This Approach Was Chosen?
-
-- By limiting the scope in Version 1, InstaPrint ensures:
+By limiting the scope in Version 1, InstaPrint ensures:
 
 - The core business logic is solid and testable
-
 - Evaluators can easily understand how the system works
-
 - Each feature can be demonstrated clearly without external dependencies
-
 - Future enhancements can be added incrementally without redesign
+- This approach mirrors how real world platforms evolve starting with a strong operational foundation and expanding into payments, logistics, and automation once the workflow is proven
 
-- This approach mirrors how real world platforms evolve starting with a strong operational foundation and expanding into payments, logistics, and automation once the workflow is proven.
-
-In short: Version 1 proves the idea works. Future versions make it bigger, smarter, and more automated.
+In short: **Version 1 proves the idea works. Future versions make it bigger, smarter, and more automated.**
 
 ---
 
@@ -441,7 +412,8 @@ In short: Version 1 proves the idea works. Future versions make it bigger, smart
 
 This project is best understood by **using it**, not just reading the code.
 
-If something doesn’t work, it’s usually because:
+If something doesn't work, it's usually because:
+
 - The same browser session is being reused
 - Cookies were blocked
 - Steps were skipped
@@ -453,16 +425,17 @@ Follow the guide carefully and everything will work smoothly.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
 ---
 
 ## Support
 
-If you’re exploring this as a reviewer, student, or developer:
+If you're exploring this as a reviewer, student, or developer:
+
 - Feel free to fork it
 - Test it
 - Break it
 - Learn from it
 
-That’s exactly what it’s built for.
+That's exactly what it's built for.
