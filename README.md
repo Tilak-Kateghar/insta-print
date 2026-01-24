@@ -18,7 +18,7 @@ InstaPrint lets two types of people use the same system:
 
 Both roles log in differently, see different dashboards, and cannot interfere with each other because of the strictly implementation of the cookies concept.
 
-This project is **not a commercial product** — it is a **functional, end-to-end system demo** built to showcase how modern web apps handle authentication, roles, and workflows.
+This project is **not a commercial product** it is a **functional, end-to-end system demo** built to showcase how modern web apps handle authentication, roles, and workflows.
 
 ---
 
@@ -57,9 +57,9 @@ From here, you can:
 - Explore dashboard navigation
 - Understand how vendor authentication works
 
-### What You Can Do as a Vendor? Here's the Walkthrough...)
+### What you can do as a Vendor? Here's the Walkthrough...
 
-Once you log in as a vendor, you can fully simulate how a real print shop would operate using InstaPrint.
+Once you log in as a vendor, You can fully simulate how a real print shop would operate using InstaPrint.
 
 ## Here’s the recommended flow to try everything properly:
 
@@ -112,7 +112,7 @@ User login works using a phone number and OTP (One Time Password).
 
 You will now be logged in as a user and redirected to the user dashboard.
 
-### What You Can Do as a User? Here's the Walkthrough...)
+### What you can do as a User? Here's the Walkthrough...
 
 Once you access InstaPrint as a user, you can experience how document printing works end-to-end from uploading a file to collecting the printed document without any confusion.
 
@@ -220,10 +220,147 @@ This project is meant to show **how things work internally**, not just how they 
 
 ## Project Structure 
 
+```text
 insta-print/
-├── backend/ # API, authentication, database
-├── frontend/ # UI, pages, dashboards
-├── README.md # You are here
+├── .gitignore
+├── .node-version
+├── ENV_CHECKLIST.md
+├── README.md
+│
+├── backend/
+│   ├── .gitignore
+│   ├── ENV_CHECKLIST.md
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   │
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   │       ├── migration_lock.toml
+│   │       └── 20260123075014_init_postgres/
+│   │           └── migration.sql
+│   │
+│   └── src/
+│       ├── app.ts
+│       ├── server.ts
+│       ├── test.ts
+│       │
+│       ├── config/
+│       │   └── env.ts
+│       │
+│       ├── domain/
+│       │   ├── audit.ts
+│       │   └── ledgerGuards.ts
+│       │
+│       ├── lib/
+│       │   ├── logger.ts
+│       │   ├── prisma.ts
+│       │   ├── requireRole.ts
+│       │   ├── supabase.ts
+│       │   └── types.ts
+│       │
+│       ├── middlewares/
+│       │   ├── authGuard.ts
+│       │   ├── customLimiters.ts
+│       │   ├── rateLimit.ts
+│       │   ├── requestId.ts
+│       │   ├── requestLogger.ts
+│       │   ├── upload.ts
+│       │   └── webhookAuth.ts
+│       │
+│       ├── routes/
+│       │   ├── admin.routes.ts
+│       │   ├── printjob.routes.ts
+│       │   ├── user.routes.ts
+│       │   └── vendor.routes.ts
+│       │
+│       ├── types/
+│       │   └── (reserved for shared types)
+│       │
+│       └── utils/
+│           ├── AppError.ts
+│           ├── asyncHandler.ts
+│           ├── cookies.ts
+│           ├── otp.ts
+│           ├── pagination.ts
+│           ├── request.ts
+│           ├── sendSms.ts
+│           └── sms.ts
+│
+├── frontend/
+│   ├── ENV_CHECKLIST.md
+│   ├── middleware.ts
+│   ├── next-env.d.ts
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.ts
+│   ├── tsconfig.json
+│   │
+│   ├── app/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   │
+│   │   ├── login/
+│   │   │   ├── layout.tsx
+│   │   │   └── user/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── layout.tsx
+│   │   │   └── vendors/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── dashboard/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── jobs/
+│   │   │       └── page.tsx
+│   │   │
+│   │   └── user/
+│   │       ├── layout.tsx
+│   │       ├── dashboard/
+│   │       │   ├── page.tsx
+│   │       │   └── user-dashboard-client.tsx
+│   │       └── jobs/
+│   │           ├── page.tsx
+│   │           ├── user-job-list-client.tsx
+│   │           ├── new/
+│   │           │   ├── page.tsx
+│   │           │   └── create-job-client.tsx
+│   │           └── [jobId]/
+│   │               ├── page.tsx
+│   │               └── user-job-detail-client.tsx
+│   │
+│   ├── components/
+│   │   ├── LayoutWrapper.tsx
+│   │   ├── Navbar.tsx
+│   │   └── ui/
+│   │       ├── Alert.tsx
+│   │       ├── Badge.tsx
+│   │       ├── Button.tsx
+│   │       ├── Card.tsx
+│   │       ├── FileUpload.tsx
+│   │       ├── Input.tsx
+│   │       ├── Select.tsx
+│   │       └── Spinner.tsx
+│   │
+│   └── lib/
+│       ├── apiFetch.ts
+│       ├── auth.ts
+│       └── utils.ts
+│
+└── supabase/
+    ├── .gitignore
+    ├── ENV_CHECKLIST.md
+    ├── config.toml
+    └── functions/
+        └── cleanup-old-print-files/
+            ├── .npmrc
+            ├── deno.json
+            └── index.ts
 
 ---
 
