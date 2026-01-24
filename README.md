@@ -1,527 +1,316 @@
-# InstaPrint - Instant Printing Service Platform
+# InstaPrint — Skip the Queue, Print Smarter
 
-## Table of Contents
+InstaPrint is a simple web application that demonstrates how a real world printing workflow can be handled digitally without confusion, long queues, or manual coordination.
 
-1. [Project Overview](#project-overview)
-2. [Current Capabilities (v1)](#current-capabilities-v1)
-3. [Problem Statement](#problem-statement)
-4. [Solution](#solution)
-5. [Target Audience](#target-audience)
-6. [System Architecture](#system-architecture)
-7. [Technology Stack](#technology-stack)
-8. [Getting Started](#getting-started)
-9. [Project Structure](#project-structure)
-10. [API Endpoints](#api-endpoints)
-11. [Workflow](#workflow)
-12. [Security Features](#security-features)
-13. [Future Works](#future-works)
-14. [Contributing](#contributing)
-15. [License](#license)
-16. [Support](#support)
+This project focuses on **authentication, role based access, dashboards, and secure workflows**, presented in a clean and beginner friendly way so that anyone can try it out easily.
+
+> 🔗 Live Application:  
+> **https://insta-print.onrender.com/**
 
 ---
 
-## Project Overview
+## What this Project is?
 
-InstaPrint is a web-based platform that connects users who need document printing services with verified local print shops. The platform eliminates the inconvenience of visiting physical print shops by allowing users to upload documents online, select from multiple vendors, make secure payments, and collect their prints using a pickup code system.
+InstaPrint lets two types of people use the same system:
 
-The application serves two primary user groups: individual customers seeking convenient printing services and print shop vendors looking to expand their customer base through an online presence.
+- **Users** → People who want to get prints hazzle free by skipping the long waiting queue's and save time.
+- **Vendors** → Print shop owners who manage incoming jobs, convert, show case their business online for their growth's and solve the major problem's which are faced by the respective target audience and get their reach. 
 
----
+Both roles log in differently, see different dashboards, and cannot interfere with each other because of the strictly implementation of the cookies concept.
 
-## Current Capabilities (v1)
-
-- Phone-based authentication using OTP
-- User and vendor role separation
-- Document upload and secure storage
-- Vendor order management dashboard
-- Pickup verification using one-time codes
-- Audit logging and role-based access control
+This project is **not a commercial product** — it is a **functional, end-to-end system demo** built to showcase how modern web apps handle authentication, roles, and workflows.
 
 ---
 
-## Problem Statement
+## How can you catch up with the live Website?
 
-In today's fast-paced world, individuals and businesses frequently require document printing services for various purposes including:
-
-- Students needing course materials, assignments, and project reports printed urgently
-- Professionals requiring printed documents for meetings, presentations, and official work
-- Small businesses needing marketing materials, flyers, and business cards
-- Event organizers requiring banners, posters, and promotional materials
-
-Traditional printing services present several challenges:
-
-- **Time Consumption**: Standing in queues at print shops consumes valuable time that could be spent productively
-- **Location Constraints**: Users are limited to print shops in their immediate vicinity
-- **Lack of Price Transparency**: Users cannot compare prices across different vendors before committing
-- **Quality Uncertainty**: No standardized quality assurance or vendor verification system
-- **Payment Limitations**: Many print shops only accept cash, limiting payment flexibility
-- **No Order Tracking**: Users have no way to track the status of their print orders
+Please follow the instructions **exactly in this order**.
 
 ---
 
-## Solution
+## Option 1: Try the Existing Vendor Account by logging in directly (or) You can create one on-your-own in the live Website
 
-InstaPrint addresses these challenges through a comprehensive digital platform that offers:
+A ready to use vendor account is already created so you can explore the vendor dashboard without creating another vendor account if you are in a hurry.
 
-- **Online Document Upload**: Users can upload documents from anywhere using an intuitive drag-and-drop interface
-- **Vendor Selection**: Access to multiple verified print shops with transparent pricing and ratings
-- **Secure Payments**: Integrated payment processing with multiple payment options
-- **Order Tracking**: Real-time status updates from order placement to completion
-- **Pickup Verification**: One-time password system ensures only the rightful recipient collects the prints
-- **Vendor Dashboard**: Comprehensive tools for print shops to manage orders and track earnings
+### Vendor Login Details
 
----
+- **Phone Number:** `9898989898`
+- **Password:** `@StrongPass123`
+- **Shop Name:** `B.Tech Print Wala`
+- **Owner Name:** `Brad Pitt`
 
-## Target Audience
+⚠️ **Do not change the password for this phone number** as this account is shared for demo purposes for trailing purpose for the people like you.
 
-### Primary Users
+### Steps
 
-**1. Individual Customers**
-- Students at universities and colleges who need academic materials printed frequently
-- Working professionals who require printed documents for meetings and presentations
-- Home users who need occasional printing services without owning a personal printer
-- Parents printing educational materials for their children
+1. Open the live Website -
+ https://insta-print.onrender.com/login/vendor
 
-**2. Small Businesses**
-- Startups requiring marketing materials on short notice
-- Local shops needing business cards and promotional flyers
-- Event planners requiring printing for functions and gatherings
+2. Enter the credentials above
 
-**3. Print Shop Vendors**
-- Local print shops looking to expand their customer base
-- Independent printing businesses seeking digital presence
-- Copy centers and stationery shops wanting to modernize their operations
+3. Click **Sign In**
 
----
+4. You will be redirected to the **Vendor Dashboard**
 
-## System Architecture
+From here, you can:
+- View vendor specific pages
+- Explore dashboard navigation
+- Understand how vendor authentication works
 
-### Frontend Architecture
+### What You Can Do as a Vendor? Here's the Walkthrough...)
 
-The frontend is built using Next.js 14 with the App Router architecture, providing a modern, server-side rendered React application.
+Once you log in as a vendor, you can fully simulate how a real print shop would operate using InstaPrint.
 
-**Key Components:**
-- **LayoutWrapper**: Manages the overall application layout and navigation
-- **Navbar**: Responsive navigation bar with authentication state management
-- **UI Components**: Reusable components including Button, Card, Input, Select, Badge, Alert, and Spinner
-- **User Dashboard**: Client-side dashboard for managing print jobs
-- **Job Management**: Components for creating, viewing, and tracking print orders
+## Here’s the recommended flow to try everything properly:
 
-**State Management:**
-- React hooks for local state management
-- API fetch utilities for server state
-- Session-based authentication with Next.js middleware
+1. Go to the Vendor Dashboard. After login, you’ll land on the vendor dashboard where you can see an overview of your activity. Forgot your password? No worries as you have an option of resetting your password through the forgot-password page.
 
-### Backend Architecture
+2. Open the “Jobs” section. Navigate to Vendor Jobs to view all incoming print requests from users. Any new request will appear as a pending job.
 
-The backend is a RESTful API built with Express.js, providing a clean separation of concerns through a modular route structure.
+3. Review a Pending Job.
 
-**Directory Structure:**
-```
-backend/src/
-├── config/         # Environment configuration
-├── domain/         # Business logic and validation
-├── lib/           # Shared utilities (Prisma, Supabase, logger)
-├── middlewares/   # Authentication, rate limiting, file upload
-├── routes/        # API route handlers
-├── types/         # TypeScript type definitions
-└── utils/         # Helper functions (OTP, pagination, errors)
-```
+4. Click on a pending job to open its details.
 
-**Key Features:**
-- JWT-based authentication with role-based access control
-- Rate limiting to prevent abuse
-- File upload handling with Multer
-- Comprehensive audit logging
+5. Set the Price for the Job by Entering the price you want to charge for that print job, Then proceed with Submitting the final price to the customer.
 
-### Database Architecture
+6. The job will now wait for the user’s price acceptance, Wait for User Acceptance. Once the user accepts the price and completes payment, The job status will update automatically. Only after this step should printing begin.
 
-The application uses SQLite for development and PostgreSQL (via Supabase) for production, managed through Prisma ORM.
+7. Check the uploaded document and job requirements, Download the File for Printing by Clicking the Download File button provided in the job which is a secure link which doesn't leak your documents. Print the file using your printing machine as usual then Mark the Job as Ready.
 
-**Database Models:**
+8. This indicates that the order can now be collected by the user via OTP Based Pickup Verification
 
-1. **User**: Stores customer information including authentication and verification status
-2. **Vendor**: Contains print shop owner details and account status
-3. **PrintJob**: Core entity tracking print orders with status, pricing, and relationships
-4. **Payment**: Manages payment transactions and gateway integration
-5. **VendorEarning**: Tracks vendor earnings and settlement status
-6. **AuditLog**: Records all significant actions for security and compliance
-7. **OTP Models**: UserOtp and VendorPasswordReset for secure authentication
-8. **PickupOtp**: One-time codes for order collection verification
+9. The user will receive a pickup OTP
 
-### Storage Architecture
+10. Verify the OTP when the customer arrives
 
-**File Storage:**
-- Supabase Storage for document file hosting
-- Secure, signed URLs for file access
-- Automatic cleanup of old print files via scheduled functions
+11. This ensures the print is handed over to the correct person
 
-**Database Storage:**
-- Structured data in SQLite (dev) / PostgreSQL (prod)
-- Indexed queries for performance optimization
-- Relational integrity through foreign key constraints
+12. Settle Earnings by Visiting the Settle / Earnings page. View unsettled amounts, Settle completed jobs to track finalized earnings
+
+This flow mirrors how a real print shop would handle orders from receiving a job to final handover but in a fully digital and organized way.
 
 ---
 
-## Technology Stack
+## Option 2: Try User Login on the live Website
+
+User login works using a phone number and OTP (One Time Password).
+
+### Steps
+
+1. Open the live Website -
+ https://insta-print.onrender.com/login/user
+
+2. Enter **any valid 10 digit phone number**
+
+3. Click **Send OTP**
+
+4. Since this is a demo environment:
+   - The OTP will **appear on the screen**
+   - Click **Copy & Fill** to auto enter it
+
+5. Click **Verify OTP**
+
+You will now be logged in as a user and redirected to the user dashboard.
+
+### What You Can Do as a User? Here's the Walkthrough...)
+
+Once you access InstaPrint as a user, you can experience how document printing works end-to-end from uploading a file to collecting the printed document without any confusion.
+
+## Here’s the recommended flow to try everything properly:
+
+1. Go to the User Login Page. Open the live site
+ and navigate to the user login page. Enter your phone number and proceed with OTP based login. The OTP will be shown on the screen wherever applicable.
+
+2. Verify OTP and Access the Dashboard. Enter the 6 digit OTP to verify your identity. After successful verification, you’ll be redirected to the User Dashboard where you can see your activity and job history.
+
+3. Create a New Print Job. Navigate to the Create New Job or New Print Job section from the dashboard. Upload the document you want to print using the provided upload option.
+
+4. Submit Print Requirements. Provide the necessary details such as number of copies and any additional instructions related to the print job. Submit the job request to make it visible to vendors.
+
+5. Wait for Vendor Price Quotation. Once a vendor reviews your job, they will set a price for the print request. The job will remain in a pending state until a price is quoted.
+
+6. Review and Accept the Price. When the vendor sets a price, you will be notified on your dashboard. Review the quoted price carefully and proceed with accepting it if you are satisfied.
+
+7. Complete Payment. After accepting the price, complete the payment as prompted. Once payment is successful, the job status updates automatically.
+
+8. After payment, the vendor will download the document and start printing it. You don’t need to take any action during this step.
+
+9. Receive Pickup OTP. Once the vendor marks the job as Ready, a pickup OTP will be generated for your order. This OTP is required to securely collect your printed documents.
+
+10. Collect Your Prints Using OTP Verification. Visit the vendor and provide the pickup OTP. The vendor verifies the OTP to ensure the prints are handed over to the correct person.
+
+11. After OTP verification, the job is marked as Completed.
+You can view the completed job details and history from your dashboard.
+
+This flow demonstrates how a user can move from uploading a document to securely collecting printed output all through a smooth, guided, and digital experience.
+
+---
+
+## ⚠️ Important Usage Rules Before Going With The Live Website
+
+Please read this carefully to avoid confusion.
+
+### 1. Do NOT use the same browser window for both roles
+
+User and Vendor sessions are **completely separate**.
+
+Choose ONE of the following:
+
+- Use **two different browsers**  
+  (Example: Chrome for User, Firefox for Vendor)
+
+(OR)
+
+- Use **Incognito / Private window** for one role
+
+If you ignore this, authentication may break due to cookie conflicts.
+
+---
+
+### 2. Do NOT refresh randomly during login
+
+- Wait for redirects to complete
+- Let the page navigate automatically after login
+
+---
+
+### 3. OTP visibility is intentional
+
+OTP appearing on screen is **expected behavior** in this demo.
+This is done so reviewers can test the system **without SMS integration**.
+
+---
+
+## What This Project Demonstrates?
+
+- User Login Through Phone Number with OTP authentication
+- Vendor login with secure passwords
+- Role based access control (User vs Vendor)
+- Cookie based authentication for both the roles
+- Protected routes and dashboards
+- Clean frontend and backend separation
+- Live working end-to-end deployment through Render
+
+This project is meant to show **how things work internally**, not just how they look.
+
+---
+
+## Tech Stack used in this Project
 
 ### Frontend
-- **Framework**: Next.js 14 (React 18)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 4
-- **UI Components**: Radix UI primitives
-- **Icons**: Lucide React
-- **Build Tool**: PostCSS
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- App Router
+- Cookie based authentication
 
 ### Backend
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **ORM**: Prisma
-- **Authentication**: JSON Web Tokens (JWT)
-- **Password Hashing**: Bcrypt
-- **File Upload**: Multer
-- **Logging**: Pino
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- JWT Authentication
+- Rate limiting & security middleware
 
-### Database & Storage
-- **Development**: SQLite
-- **Production**: PostgreSQL (Supabase)
-- **Object Storage**: Supabase Storage
-- **Database Migrations**: Prisma Migrate
-
-### DevOps & Tools
-- **Version Control**: Git
-- **Package Management**: npm
-- **Runtime**: Node.js
-- **Code Quality**: TypeScript compiler, ESLint
+### Database
+- SQLite (development)
+- PostgreSQL (production)
 
 ---
 
-## Getting Started
+## Project Structure 
 
-### Prerequisites
-
-Before you begin, ensure you have the following installed:
-- Node.js 18.x or higher
-- npm or yarn
-- Git
-- Supabase account (for production deployment)
-
-### Installation Steps
-
-1. **Clone the Repository**
-
-```bash
-git clone https://github.com/yourusername/insta-print.git
-cd insta-print
-```
-
-2. **Setup Backend**
-
-```bash
-cd backend
-npm install
-```
-
-3. **Setup Frontend**
-
-```bash
-cd frontend
-npm install
-```
-
-4. **Environment Configuration**
-
-Create `.env` file in the backend directory:
-
-```bash
-# Backend Environment Variables
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-super-secret-jwt-key-min-32-chars"
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_KEY="your-supabase-anon-key"
-PORT=3001
-```
-
-Create `.env.local` file in the frontend directory:
-
-```bash
-# Frontend Environment Variables
-NEXT_PUBLIC_API_URL="http://localhost:3001"
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_KEY="your-supabase-anon-key"
-```
-
-5. **Initialize Database**
-
-```bash
-cd backend
-npx prisma migrate dev --name init
-npx prisma generate
-```
-
-6. **Start Development Servers**
-
-Terminal 1 - Backend:
-```bash
-cd backend
-npm run dev
-```
-
-Terminal 2 - Frontend:
-```bash
-cd frontend
-npm run dev
-```
-
-7. **Access the Application**
-
-Open your browser and navigate to:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001
-
-### Running User and Vendor Sides Simultaneously
-
-When testing both user and vendor functionalities during development, it is important to run them in separate browser windows or profiles. This prevents cookie collision and authentication conflicts that can occur when switching between user and vendor accounts in the same browser session.
-
-**Option 1: Using Different Browser Profiles**
-
-1. Open Chrome and create a new user profile for vendor testing
-2. In Profile 1 (Default): Navigate to http://localhost:3000 and log in as a regular user
-3. In Profile 2 (Vendor): Navigate to http://localhost:3000 and log in as a vendor
-4. Each profile maintains its own cookies and authentication state
-
-**Option 2: Using Incognito/Private Windows**
-
-1. Open a regular browser window and log in as a user
-2. Open an incognito/private window (Ctrl+Shift+N or Cmd+Shift+N)
-3. Navigate to the same URL and log in as a vendor
-4. Incognito mode isolates cookies from the main session
-
-**Option 3: Using Different Browsers**
-
-1. Use Chrome for user testing
-2. Use Firefox or Safari for vendor testing
-3. Each browser maintains independent cookie storage
-
-**Important Notes:**
-- Always use one account type per browser window
-- Do not log out and log in with a different account type in the same window
-- Clear browser cache if you encounter unexpected authentication issues
-- The backend API is shared, so data will be consistent across both views
-
----
-
-## Project Structure
-
-```
 insta-print/
-├── .gitignore              # Git ignore rules
-├── README.md               # Project documentation
-├── TODO.md                 # Development tasks
-├── ENV_CHECKLIST.md        # Environment setup checklist
-│
-├── backend/                # Express.js backend
-│   ├── .gitignore
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── prisma/
-│   │   ├── schema.prisma   # Database schema
-│   │   ├── dev.db          # SQLite database
-│   │   └── migrations/     # Database migrations
-│   └── src/
-│       ├── app.ts          # Express app configuration
-│       ├── server.ts       # Server entry point
-│       ├── config/         # Environment config
-│       ├── domain/         # Business logic
-│       ├── lib/            # Shared libraries
-│       ├── middlewares/    # Express middleware
-│       ├── routes/         # API routes
-│       ├── types/          # TypeScript types
-│       └── utils/          # Utility functions
-│
-├── frontend/               # Next.js frontend
-│   ├── .gitignore
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── tailwind.config.ts
-│   ├── next.config.js
-│   ├── app/
-│   │   ├── page.tsx        # Landing page
-│   │   ├── layout.tsx      # Root layout
-│   │   ├── globals.css     # Global styles
-│   │   ├── login/          # Authentication pages
-│   │   ├── dashboard/      # User dashboard
-│   │   ├── admin/          # Admin panel
-│   │   └── user/           # User specific pages
-│   ├── components/
-│   │   ├── Navbar.tsx
-│   │   ├── LayoutWrapper.tsx
-│   │   └── ui/             # Reusable UI components
-│   └── lib/                # Frontend utilities
-│
-└── supabase/               # Supabase configuration
-    ├── .gitignore
-    ├── config.toml         # Supabase CLI config
-    └── functions/          # Edge functions
-        └── cleanup-old-print-files/
-```
+├── backend/ # API, authentication, database
+├── frontend/ # UI, pages, dashboards
+├── README.md # You are here
 
 ---
 
-## API Endpoints
+## What to Explore as a Reviewer
 
-### Authentication
-- `POST /api/user/login` - User login with phone and OTP
-- `POST /api/user/register` - User registration
-- `POST /api/user/send-otp` - Send verification OTP
-- `POST /api/vendor/login` - Vendor login
-- `POST /api/vendor/register` - Vendor registration
+If you are reviewing this project, try:
 
-### Print Jobs
-- `POST /api/print-jobs` - Create new print job
-- `GET /api/print-jobs` - List user's print jobs
-- `GET /api/print-jobs/:id` - Get print job details
-- `PATCH /api/print-jobs/:id/price` - Vendor accepts price
-- `GET /api/print-jobs/:id/otp` - Get pickup OTP
-
-### Payments
-- `POST /api/print-jobs/:id/pay` - Initiate payment
-- `GET /api/print-jobs/:id/payment/status` - Check payment status
-
-### Admin
-- `GET /api/admin/vendors` - List all vendors
-- `PATCH /api/admin/vendors/:id` - Update vendor status
-- `GET /api/admin/earnings` - View earnings report
+- Logging in as a **Vendor**
+- Logging in as a **User**
+- Switching dashboards using separate browser sessions
+- Observing how authentication behaves securely
+- Inspecting protected routes (they block unauthorized access)
 
 ---
 
-## Workflow
+### Project Scope & Version Roadmap (v1)
 
-### User Journey
+## The current live deployment of InstaPrint represents Version 1 (v1) of the platform.
 
-1. **Registration and Login**
-   - User enters phone number
-   - Receives OTP via SMS
-   - Verifies OTP and creates account
+This version is intentionally designed to prove the core idea end-to-end focusing on authentication, job flow, vendor and user interaction, and operational correctness before expanding into advanced features.
 
-2. **Creating a Print Job**
-   - User navigates to create job page
-   - Uploads document file (PDF, images, etc.)
-   - Selects print options (color mode, paper size, copies)
-   - Views available vendors with pricing
-   - Selects preferred vendor
-   - Confirms order and proceeds to payment
+## What Version 1 Focuses On?
 
-3. **Payment Processing**
-   - User selects payment method
-   - Payment gateway integration processes transaction
-   - Order status updates to "Processing"
+Version 1 prioritizes the fundamental workflow of a real print shop, including:
 
-4. **Vendor Notification**
-   - Vendor receives order notification
-   - Vendor views order details
-   - Vendor confirms pricing and begins printing
+- OTP based authentication for users and vendors
 
-5. **Order Completion**
-   - Vendor marks job as ready
-   - System generates pickup OTP
-   - User receives notification
+- Clear separation of user, vendor, and admin roles
 
-6. **Pickup**
-   - User visits vendor location
-   - Provides pickup OTP
-   - Vendor verifies and hands over prints
-   - Order marked as completed
+- Secure document upload and access
 
-### Vendor Workflow
+- Vendor driven pricing and job management
 
-1. **Dashboard Overview**
-   - View pending orders
-   - Monitor earnings
-   - Track completed jobs
+- User price acceptance flow
 
-2. **Order Management**
-   - Receive new order notifications
-   - Review document and pricing
-   - Accept or decline orders
-   - Update job status throughout process
+- OTP based pickup verification
 
-3. **Earnings Management**
-   - Track daily, weekly, monthly earnings
-   - View platform fees
-   - Request settlements
+- Earnings tracking and settlement visibility
 
----
+These features together demonstrate the complete lifecycle of a print job, from request creation to final handover.
 
-## Security Features
+## Features Planned for Future Versions
 
-- **Authentication**: JWT-based authentication with secure token refresh
-- **Password Security**: Bcrypt hashing with salt rounds
-- **OTP Verification**: Time-limited one-time passwords
-- **Role-Based Access**: Separate permissions for users, vendors, and admins
-- **Rate Limiting**: Protection against brute force attacks
-- **Input Validation**: Server-side validation for all inputs
-- **Audit Logging**: Complete trail of all significant actions
-- **Secure File Handling**: Signed URLs for document access
+Some capabilities are intentionally deferred to future versions to keep the initial release stable, understandable, and easy to evaluate.
+
+# These include:
+
+- Online payment gateway integrations (planned with Razorpay / Stripe / UPI support)
+
+- Delivery and logistics workflows (currently designed for in-person pickup using OTP verification)
+
+- Location based vendor discovery (distance, maps, and geo-filtering)
+
+- Automated vendor payouts and settlements (currently tracked logically, with manual settlement simulation)
+
+- Production grade SMS and notification providers
+(OTP is surfaced on screen in development for transparency and testing)
+
+## Why This Approach Was Chosen?
+
+- By limiting the scope in Version 1, InstaPrint ensures:
+
+- The core business logic is solid and testable
+
+- Evaluators can easily understand how the system works
+
+- Each feature can be demonstrated clearly without external dependencies
+
+- Future enhancements can be added incrementally without redesign
+
+- This approach mirrors how real world platforms evolve starting with a strong operational foundation and expanding into payments, logistics, and automation once the workflow is proven.
+
+In short: Version 1 proves the idea works. Future versions make it bigger, smarter, and more automated.
 
 ---
 
-## Future Works
+## Final Notes
 
-> The following features are part of the planned roadmap and are not yet implemented in the current version of the platform.
+This project is best understood by **using it**, not just reading the code.
 
-### Multi-Channel OTP and Notification Infrastructure
+If something doesn’t work, it’s usually because:
+- The same browser session is being reused
+- Cookies were blocked
+- Steps were skipped
+- Render being busy when try to deploy
 
-The current OTP system operates on a basic implementation that can be significantly improved for better reliability and user reachability. Future development includes integration with local SMS providers such as Twilio, MSG91, and Fast2SMS to ensure OTP delivery across all mobile carriers with high success rates.
-
-Additionally, implementing WhatsApp Business API integration will provide an alternative communication channel that offers higher message delivery rates and lower costs compared to traditional SMS. This will also enable the platform to send rich notifications including order updates, payment confirmations, and promotional messages through WhatsApp's Business platform. The multi-channel approach ensures that users receive important communications regardless of their preferred messaging platform.
-
-### Online Payment Gateway and Transaction Automation
-
-The platform is designed to support a comprehensive payment ecosystem. Future iterations will include integration with major payment gateways such as Razorpay, Stripe, and PayU to enable seamless online payments. This integration will support multiple payment methods including credit cards, debit cards, net banking, UPI, and digital wallets.
-
-Implementing payment webhooks will ensure real-time payment confirmation and automatic order status updates. The system will also support payment links and QR code generation for offline customer acquisition, allowing vendors to collect payments from walk-in customers through the platform. Subscription-based payment options for frequent users and corporate clients will provide additional revenue streams and customer loyalty opportunities.
-
-### Invoice Generation and Management
-
-A complete invoicing system is planned for future implementation to serve both individual customers and business clients. This feature will automatically generate professional invoices upon payment completion, including detailed breakdowns of print job specifications, pricing, taxes, and vendor information.
-
-The system will support customizable invoice templates for different business branding requirements. Digital invoice storage will allow customers to access their transaction history and download invoices for accounting and reimbursement purposes.
-
-Corporate clients will have access to consolidated monthly invoices and detailed expense reports for their organizational needs. The invoice system will also integrate with popular accounting software such as Tally, Zoho Books, and QuickBooks to streamline business financial operations.
-
-### Comprehensive Refund Management System
-
-The platform will implement a full-featured refund management system to handle customer payment reversals transparently and efficiently. This system will include automated refund processing for failed payments and cancelled orders. Support for partial refunds will allow refunds for specific items or services within a print job order.
-
-A dedicated refund tracking dashboard will enable administrators to monitor refund requests, process them within defined SLAs, and generate reports on refund metrics. The system will maintain complete audit trails for all refund transactions, ensuring compliance with financial regulations and providing transparency to all stakeholders.
-
-Customer-facing refund status tracking will allow users to monitor their refund requests in real-time from their dashboard.
-
-### Automated Vendor Payout and Settlement Engine
-
-The vendor earnings system is planned for significant enhancement to provide more tangible and flexible payment options. Future development includes integration with payment disbursement services such as RazorpayX, Paytm Payouts, and Stripe Connect to enable automatic vendor settlements.
-
-Configurable payout schedules will allow vendors to choose between daily, weekly, or monthly settlement cycles based on their business requirements. A comprehensive vendor wallet system will enable vendors to maintain balances within the platform, view detailed transaction histories, and track pending settlements. Bank account verification with automated KYC compliance will ensure secure and compliant fund transfers.
-
-Real-time payment notifications will keep vendors informed about settlement completions and pending amounts. Detailed earning reports including platform fee breakdowns, tax deductions, and net payable amounts will provide complete financial transparency to vendors.
-
-### Additional Planned Enhancements
-
-Beyond the core features mentioned above, several other improvements are planned for future releases. A mobile application for both iOS and Android platforms will provide native user experiences with push notifications and offline capabilities.
-
-Advanced analytics dashboards for vendors will include demand forecasting, peak hour analysis, and customer behavior insights. A vendor rating and review system will help maintain service quality and build customer trust. Multi-language support will make the platform accessible to users across different linguistic regions. Integration with cloud printing services will enable remote printing and delivery options for customers who cannot visit physical pickup locations.
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+Follow the guide carefully and everything will work smoothly.
 
 ---
 
@@ -533,5 +322,10 @@ This project is licensed under the MIT License.
 
 ## Support
 
-For support, please open an issue in the GitHub repository for bug reports, feature requests, or technical discussions.
+If you’re exploring this as a reviewer, student, or developer:
+- Feel free to fork it
+- Test it
+- Break it
+- Learn from it
 
+That’s exactly what it’s built for.
