@@ -43,7 +43,8 @@ router.post(
     return res.status(200).json({
       success: true,
       message: "OTP generated",
-      ...(showDevOtp && { otp }),
+      //...(showDevOtp && { otp }),
+      otp,
     });
   })
 );

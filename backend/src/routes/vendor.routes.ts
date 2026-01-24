@@ -164,7 +164,8 @@ router.post(
     return res.json({
       success: true,
       message: "OTP sent",
-      ...(showDevOtp && { otp }),
+      //...(showDevOtp && { otp }),
+      otp,
     });
   })
 );
