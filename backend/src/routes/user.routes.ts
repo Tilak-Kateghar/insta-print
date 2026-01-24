@@ -12,7 +12,7 @@ import { getAuthCookieOptions } from "../utils/cookies";
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const isDev = process.env.NODE_ENV !== "production";
+const showDevOtp = process.env.SHOW_DEV_OTP === "true";
 
 if (!JWT_SECRET) {
   throw new AppError("JWT_SECRET not configured", 500, "CONFIG_ERROR");
@@ -38,15 +38,12 @@ router.post(
       data: { phone, otpHash, expiresAt },
     });
 
-    if (isDev) {
-      logger.debug({ phone }, "USER_OTP_GENERATED");
-      // eslint-disable-next-line no-console
-      console.log(`\n🔐 DEV OTP for ${phone}: ${otp}\n`);
-    }
+    console.log(`\n🔐 DEV OTP for ${phone}: ${otp}\n`);
 
     return res.status(200).json({
+      success: true,
       message: "OTP generated",
-      ...(isDev && { otp }),
+      ...(showDevOtp && { otp }),
     });
   })
 );
@@ -61,9 +58,8 @@ router.post(
       throw new AppError("Phone and OTP are required", 400, "VALIDATION_ERROR");
     }
 
-    if (isDev) {
-      console.log(`OTP verification attempt: ${otp}`);
-    }
+    console.log(`OTP verification attempt: ${otp}`);
+
 
     if (typeof phone !== "string" || typeof otp !== "string") {
       throw new AppError("Invalid input format", 400, "VALIDATION_ERROR");

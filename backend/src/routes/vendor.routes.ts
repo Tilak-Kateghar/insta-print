@@ -152,22 +152,19 @@ router.post(
       },
     });
 
-    const isDev = process.env.NODE_ENV !== "production";
+    const showDevOtp = process.env.SHOW_DEV_OTP === "true";
 
-    if (isDev) {
-      logger.debug({ phone }, "VENDOR_FORGOT_PASSWORD_OTP");
-      // eslint-disable-next-line no-console
-      console.log(
-        "\n================ VENDOR FORGOT PASSWORD OTP ================\n" +
-        `📱 Phone : ${phone}\n` +
-        `🔐 OTP   : ${otp}\n` +
-        "===========================================================\n"
-      );
-    }
+    console.log(
+      "\n================ VENDOR FORGOT PASSWORD OTP ================\n" +
+      `📱 Phone : ${phone}\n` +
+      `🔐 OTP   : ${otp}\n` +
+      "===========================================================\n"
+    );
 
     return res.json({
+      success: true,
       message: "OTP sent",
-      ...(isDev && { otp }),
+      ...(showDevOtp && { otp }),
     });
   })
 );
@@ -204,7 +201,7 @@ router.post(
       throw new AppError("Invalid OTP. Please try again.", 400, "INVALID_OTP");
     }
 
-    res.json({ message: "OTP verified" });
+    return res.json({ success:true, message: "OTP verified" });
   })
 );
 
