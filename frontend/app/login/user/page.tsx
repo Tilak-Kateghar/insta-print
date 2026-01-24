@@ -154,7 +154,7 @@ export default function UserLoginPage() {
                     className="text-sm sm:text-base"
                   />
 
-                  {process.env.NODE_ENV !== "production" && devOtp && (
+                  {process.env.NEXT_PUBLIC_SHOW_DEV_OTP === "true" && devOtp && (
                     <Alert variant="info" title="Development Mode">
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-bold">{devOtp}</span>

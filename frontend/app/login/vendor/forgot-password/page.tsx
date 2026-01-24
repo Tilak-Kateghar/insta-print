@@ -206,7 +206,7 @@ export default function VendorForgotPasswordPage() {
 
             {step === "OTP" && (
               <div className="space-y-4">
-                {process.env.NODE_ENV !== "production" && devOtp && (
+                {process.env.NEXT_PUBLIC_SHOW_DEV_OTP === "true" && devOtp && (
                   <Alert variant="info" title="Development Mode">
                     <AlertDescription>
                       <div className="flex items-center justify-between">
