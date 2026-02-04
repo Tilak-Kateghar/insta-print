@@ -66,14 +66,13 @@ export default function LandingPage() {
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-charcoal-600 mb-6 sm:mb-10 max-w-2xl lg:max-w-3xl mx-auto leading-relaxed px-2">
               Skip the queues and get your documents printed instantly with professional quality.
-              Upload your files and receive high-quality prints with fast pickup service.
+              Upload your files and receive high quality prints with fast pickup service.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4">
               <Link href="/login/user">
                 <Button size="lg" className="bg-gradient-to-r from-tomato-500 to-deepOrange-500 hover:from-tomato-600 hover:to-deepOrange-600 text-white shadow-button hover:shadow-button-hover transform hover:scale-[1.02] transition-all duration-200 px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-lg w-full sm:w-auto">
                   <Zap className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="hidden sm:inline">Get Started as User</span>
-                  <span className="sm:inline">Get Started</span>
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
@@ -81,7 +80,6 @@ export default function LandingPage() {
                 <Button variant="outline" size="lg" className="border-2 border-tomato-500 text-tomato-600 hover:bg-tomato-50 hover:border-tomato-600 transition-all duration-200 px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-lg w-full sm:w-auto">
                   <Award className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="hidden sm:inline">Join as Print Shop</span>
-                  <span className="sm:inline">Join as Shop</span>
                 </Button>
               </Link>
             </div>
@@ -89,15 +87,15 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-charcoal-500 px-4">
               <div className="flex items-center gap-1.5">
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
-                <span>100% Secure Payments</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
                 <span>Verified Print Shops</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
-                <span>Instant Delivery</span>
+                <span>Instant Printing</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
+                <span>Secure Payments System</span>
               </div>
             </div>
           </div>
@@ -111,7 +109,7 @@ export default function LandingPage() {
               Why Choose InstaPrint?
             </h2>
             <p className="text-base sm:text-lg text-charcoal-600 max-w-xl mx-auto">
-              Experience the future of printing with our innovative platform designed for modern India
+              Our platform provides the most reliable solution for the ones facing problems related to the frustated offline printing queues, time management, and trusted service for the students and many professionals along with a proper platform as a service to the vendors to track and trace every print.
             </p>
           </div>
 
@@ -215,21 +213,20 @@ export default function LandingPage() {
             Ready to Print Instantly?
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-10 leading-relaxed">
-            Join thousands of satisfied customers and experience the future of printing today
+            Try out the Insta Print now to skip the long queues and get the prints from the verified vendors
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-center px-2">
             <Link href="/login/user">
               <Button size="lg" variant="secondary" className="bg-white text-tomato-600 hover:bg-white/90 shadow-lg px-6 py-3 sm:px-10 sm:py-4 text-sm sm:text-lg font-semibold w-full sm:w-auto transform hover:scale-[1.02] transition-all duration-200">
                 <Zap className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="hidden sm:inline">Start Printing Now</span>
-                <span className="sm:inline">Start Printing</span>
+                <span className="hidden sm:inline">Get Printing Now</span>
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             <Link href="/login/vendor">
               <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-tomato-600 px-6 py-3 sm:px-10 sm:py-4 text-sm sm:text-lg font-semibold w-full sm:w-auto transform hover:scale-[1.02] transition-all duration-200">
                 <Award className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Become a Partner
+                Become a Printing Vendor
               </Button>
             </Link>
           </div>
@@ -245,7 +242,10 @@ export default function LandingPage() {
             <span className="text-lg sm:text-2xl font-bold">InstaPrint</span>
           </div>
           <p className="text-charcoal-300 mb-3 sm:mb-4 text-sm sm:text-lg px-2">
-            Printing Made Simple by Skipping the Queue's - Your Convenient Solution for Instant Print Services with Verified Vendors
+            Printing Made Simple by Skipping the Queue's. Your Convenient Solution for Instant Print Services with Verified Vendors
+          </p>
+          <p className="text-charcoal-400 text-xs sm:text-sm">
+            Designed and Developed by Kateghar Tilak
           </p>
           <p className="text-charcoal-400 text-xs sm:text-sm">
             &copy; 2026 InstaPrint. All rights reserved.

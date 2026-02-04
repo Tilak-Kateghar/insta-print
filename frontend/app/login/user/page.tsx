@@ -205,6 +205,12 @@ export default function UserLoginPage() {
             )}
           </CardContent>
         </Card>
+        <p className="text-center text-xs sm:text-sm text-gray-500 mt-4 sm:mt-6 px-2">
+          Please wait for the backend to wake-up which may take 1-2 minutes as the OTP will be generated and showed up on screen which needs to be verified for the deployment purposes.
+        </p>
+        <p className="text-center text-xs sm:text-sm text-gray-500 mt-4 sm:mt-6 px-2">
+          This project was designed, developed and demonstrated to showcase the idea and the platform as a deployment of the idea with the help of variety tech-stacks.
+        </p>
 
         <p className="text-center text-xs sm:text-sm text-gray-500 mt-4 sm:mt-6 px-2">
           By continuing, you agree to our Terms of Service

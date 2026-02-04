@@ -200,6 +200,12 @@ export default function VendorLoginPage() {
                 Create your print shop account
               </button>
             </div>
+            <p className="text-center text-xs sm:text-sm text-gray-500 mt-4 sm:mt-6 px-2">
+              Please wait for the backend to wake-up which may take 1-2 minutes as the password will be verified for the deployment purposes.
+            </p>
+            <p className="text-center text-xs sm:text-sm text-gray-500 mt-4 sm:mt-6 px-2">
+              This project was designed, developed and demonstrated to showcase the idea and the platform as a deployment of the idea with the help of variety tech-stacks.
+            </p>
           </div>
         </div>
       </div>
