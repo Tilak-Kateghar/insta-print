@@ -126,7 +126,7 @@ export default function LandingPage() {
               <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-success-100 to-success-200 rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:from-success-200 group-hover:to-success-300 transition-all duration-300 shadow-lg">
                 <Clock className="h-6 w-6 sm:h-7 sm:h-7 lg:h-8 lg:w-8 text-success-600" />
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-charcoal-900 mb-2 sm:mb-3">Lightning Fast</h3>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-charcoal-900 mb-2 sm:mb-3">Instant Service</h3>
               <p className="text-sm sm:text-base text-charcoal-600 leading-relaxed">Get your prints ready in minutes, not hours with our express service</p>
             </Card>
 
@@ -170,7 +170,7 @@ export default function LandingPage() {
                   <Upload className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-tomato-600" />
                 </div>
               </div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Upload & Select</h3>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Select & Upload</h3>
               <p className="text-sm sm:text-base text-charcoal-600 leading-relaxed">Upload your document and choose from multiple verified print shops in your area</p>
             </div>
 
@@ -183,7 +183,7 @@ export default function LandingPage() {
                   <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-success-600" />
                 </div>
               </div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Pay & Confirm</h3>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Confirm & Pay</h3>
               <p className="text-sm sm:text-base text-charcoal-600 leading-relaxed">Review pricing, make secure payment, and get instant confirmation</p>
             </div>
 
@@ -196,7 +196,7 @@ export default function LandingPage() {
                   <Printer className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-info-600" />
                 </div>
               </div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Pickup & Print</h3>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-charcoal-900 mb-2 sm:mb-4">Get Print & Pickup</h3>
               <p className="text-sm sm:text-base text-charcoal-600 leading-relaxed">Collect your professionally printed documents with the pickup code</p>
             </div>
           </div>
